@@ -103,7 +103,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('No workspaces found');
       }
       
-      const workspaceId = workspaceData.data[1].gid;
+      const workspaceId = workspaceData.data[3].gid;
       
       // Fetch projects
       const projectsResponse = await fetch(`https://app.asana.com/api/1.0/workspaces/${workspaceId}/projects`, {
