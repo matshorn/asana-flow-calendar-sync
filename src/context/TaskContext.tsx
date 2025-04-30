@@ -39,7 +39,7 @@ const mockTasks: Task[] = [
 ];
 
 // Replace 'YOUR_ASANA_TOKEN_HERE' with your actual Asana token
-const FIXED_ASANA_TOKEN = 'YOUR_ASANA_TOKEN_HERE';
+const FIXED_ASANA_TOKEN = '2/708730772520/1210120911116555:51c156887a0bebcf8c101daac7f13496';
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
