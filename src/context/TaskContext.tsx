@@ -38,6 +38,9 @@ const mockTasks: Task[] = [
   { id: 'task-6', name: 'Create user journey map', projectId: 'project-3' },
 ];
 
+// Replace 'YOUR_ASANA_TOKEN_HERE' with your actual Asana token
+const FIXED_ASANA_TOKEN = 'YOUR_ASANA_TOKEN_HERE';
+
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -45,21 +48,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Add state for Asana token
-  const [asanaToken, setAsanaToken] = useState<string>(() => {
-    // Check if token exists in localStorage
-    const savedToken = localStorage.getItem('asana_token');
-    return savedToken || '';
-  });
+  // Use the fixed token instead of reading from localStorage
+  const [asanaToken, setAsanaToken] = useState<string>(FIXED_ASANA_TOKEN);
 
-  // Save token to localStorage whenever it changes
-  useEffect(() => {
-    if (asanaToken) {
-      localStorage.setItem('asana_token', asanaToken);
-    }
-  }, [asanaToken]);
+  // Remove localStorage effect since we're using a fixed token
 
-  // Initialize with mock data or fetch from Asana if token exists
+  // Initialize with mock data or fetch from Asana
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -82,7 +76,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initializeData();
-  }, [asanaToken]); // Re-run when token changes
+  }, []); // Remove asanaToken dependency since it won't change
 
   // Fetch data from Asana API
   const fetchFromAsana = async () => {
