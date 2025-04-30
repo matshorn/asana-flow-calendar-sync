@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import TaskCard from '@/components/TaskCard';
@@ -121,14 +122,14 @@ const TaskList: React.FC = () => {
         
         <div className="mb-4">
           <Select 
-            value={selectedProjectId || ''} 
-            onValueChange={(value) => setSelectedProjectId(value || null)}
+            value={selectedProjectId || 'all'} 
+            onValueChange={(value) => setSelectedProjectId(value === 'all' ? null : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Filter by project" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Projects</SelectItem>
+              <SelectItem value="all">All Projects</SelectItem>
               {projects.map((project) => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.name}
