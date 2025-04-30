@@ -1,12 +1,14 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { format, addDays, isToday } from 'date-fns';
 import { Task } from '@/types';
 import { Card } from '@/components/ui/card';
 import { StretchVertical, CheckCircle, Circle, Trash } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const Calendar: React.FC = () => {
-  const { tasks, scheduleTask, updateTaskTimeEstimate, markTaskComplete, removeTaskFromCalendar } = useTaskContext();
+  const { tasks, scheduleTask, updateTaskTimeEstimate, markTaskComplete, removeTaskFromCalendar, updateTaskName } = useTaskContext();
   const today = new Date();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [resizing, setResizing] = useState<{
@@ -32,6 +34,10 @@ const Calendar: React.FC = () => {
     height: number,
     transform: string
   } | null>(null);
+  
+  // Add state for editing task name in calendar
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTaskName, setEditingTaskName] = useState<string>('');
   
   const calendarRef = useRef<HTMLDivElement>(null);
   
@@ -379,6 +385,31 @@ const Calendar: React.FC = () => {
     removeTaskFromCalendar(taskId);
   };
   
+  // Start editing task name
+  const handleEditTaskName = (taskId: string, currentName: string) => {
+    setEditingTaskId(taskId);
+    setEditingTaskName(currentName);
+  };
+  
+  // Save task name changes
+  const handleSaveTaskName = () => {
+    if (editingTaskId && editingTaskName.trim()) {
+      updateTaskName(editingTaskId, editingTaskName.trim());
+      setEditingTaskId(null);
+      setEditingTaskName('');
+    }
+  };
+  
+  // Handle key events during task name editing
+  const handleTaskNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSaveTaskName();
+    } else if (e.key === 'Escape') {
+      setEditingTaskId(null);
+      setEditingTaskName('');
+    }
+  };
+  
   // Add CSS to stop text selection during dragging operations
   useEffect(() => {
     const style = document.createElement('style');
@@ -509,7 +540,8 @@ const Calendar: React.FC = () => {
                           const target = e.target as HTMLElement;
                           if (
                             target.closest('.task-action-button') || 
-                            target.closest('.resize-handle')
+                            target.closest('.resize-handle') ||
+                            target.closest('input') // Don't drag when clicking input
                           ) {
                             return;
                           }
@@ -531,7 +563,30 @@ const Calendar: React.FC = () => {
                         )}
                         
                         <div className="font-medium truncate flex-1 flex items-center text-[10px] justify-between gap-1">
-                          <span className={task.completed ? 'text-gray-500' : ''}>{task.name}</span>
+                          {editingTaskId === task.id ? (
+                            <Input
+                              type="text"
+                              value={editingTaskName}
+                              onChange={(e) => setEditingTaskName(e.target.value)}
+                              onBlur={handleSaveTaskName}
+                              onKeyDown={handleTaskNameKeyDown}
+                              className="h-5 text-[10px] p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            <span 
+                              className={task.completed ? 'text-gray-500' : ''}
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                if (!task.completed) {
+                                  handleEditTaskName(task.id, task.name);
+                                }
+                              }}
+                            >
+                              {task.name}
+                            </span>
+                          )}
                           <div className="flex items-center gap-1">
                             {/* Remove task button */}
                             <div 

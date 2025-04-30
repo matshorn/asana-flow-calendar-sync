@@ -4,7 +4,7 @@ import { Task, Project } from '@/types';
 import { useTaskContext } from '@/context/TaskContext';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Grip, CheckCircle, Circle } from 'lucide-react';
+import { CheckCircle, Circle } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;
@@ -12,11 +12,13 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
-  const { updateTaskTimeEstimate, markTaskComplete } = useTaskContext();
+  const { updateTaskTimeEstimate, markTaskComplete, updateTaskName } = useTaskContext();
   const [timeEstimate, setTimeEstimate] = useState<string>(
     task.timeEstimate ? `${task.timeEstimate}` : ''
   );
   const [isDragging, setIsDragging] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [taskName, setTaskName] = useState(task.name);
 
   const handleTimeEstimateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -25,6 +27,27 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
     const numValue = parseInt(value);
     if (!isNaN(numValue) && numValue > 0) {
       updateTaskTimeEstimate(task.id, numValue);
+    }
+  };
+
+  const handleTaskNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTaskName(e.target.value);
+  };
+
+  const handleTaskNameBlur = () => {
+    setIsEditing(false);
+    // Only update if name has changed
+    if (taskName.trim() !== task.name) {
+      updateTaskName(task.id, taskName.trim());
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleTaskNameBlur();
+    } else if (e.key === 'Escape') {
+      setTaskName(task.name); // Reset to original name
+      setIsEditing(false);
     }
   };
 
@@ -75,11 +98,22 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
             <Circle size={18} />
           )}
         </div>
-        <div className="drag-handle text-gray-400 hover:text-gray-600">
-          <Grip size={16} />
-        </div>
-        <div className="flex-1">
-          <div className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>{task.name}</div>
+        <div className="flex-1" onDoubleClick={() => !task.completed && setIsEditing(true)}>
+          {isEditing ? (
+            <Input
+              type="text"
+              value={taskName}
+              onChange={handleTaskNameChange}
+              onBlur={handleTaskNameBlur}
+              onKeyDown={handleKeyDown}
+              className="h-7 text-sm p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              autoFocus
+            />
+          ) : (
+            <div className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>
+              {task.name}
+            </div>
+          )}
           <div className="text-xs text-gray-500">
             {project?.name || 'No project'}
           </div>
