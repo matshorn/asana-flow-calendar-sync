@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
-import { format, addDays } from 'date-fns';
+import { format, addDays, parse, isToday } from 'date-fns';
 import { Task } from '@/types';
 import { Card } from '@/components/ui/card';
 import { StretchVertical } from 'lucide-react';
@@ -8,6 +9,7 @@ import { StretchVertical } from 'lucide-react';
 const Calendar: React.FC = () => {
   const { tasks, scheduleTask, updateTaskTimeEstimate } = useTaskContext();
   const today = new Date();
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [resizing, setResizing] = useState<{
     taskId: string;
     startY: number;
@@ -24,6 +26,18 @@ const Calendar: React.FC = () => {
   } | null>(null);
 
   const resizingRef = useRef<HTMLDivElement>(null);
+  
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    
+    // Initial set
+    setCurrentTime(new Date());
+    
+    return () => clearInterval(timer);
+  }, []);
   
   // Generate 3 days (today + next 2 days)
   const days = [
@@ -42,6 +56,31 @@ const Calendar: React.FC = () => {
     }
   }
   
+  // Calculate the position of the current time line
+  const calculateTimeLinePosition = () => {
+    const currentHour = currentTime.getHours();
+    const currentMinute = currentTime.getMinutes();
+    
+    // If current time is outside working hours (8:00-18:00), don't show the line
+    if (currentHour < 8 || currentHour >= 18) {
+      return null;
+    }
+    
+    // Calculate position as percentage from the top of the calendar
+    const startHour = 8; // Calendar starts at 8:00
+    const totalMinutesInDay = (18 - 8) * 60; // Total minutes in the calendar day (8:00-18:00)
+    const minutesSinceStart = (currentHour - startHour) * 60 + currentMinute;
+    
+    // Height of each hour (2 slots of 30 mins, each 48px high)
+    const slotHeight = 48; // Height of one 30-min slot in px
+    const slotsPerHour = 2;
+    
+    // Calculate exact position in pixels
+    const position = (minutesSinceStart / 60) * slotHeight * slotsPerHour;
+    
+    return position;
+  };
+
   // Find tasks scheduled for each slot
   const findTaskForSlot = (day: Date, time: string) => {
     return tasks.find(task => {
@@ -251,12 +290,24 @@ const Calendar: React.FC = () => {
           
           {/* Calendar days */}
           {days.map((day, dayIndex) => (
-            <div key={`day-${dayIndex}`} className="flex-1 flex flex-col min-w-[150px]">
+            <div key={`day-${dayIndex}`} className="flex-1 flex flex-col min-w-[150px] relative">
               {/* Day header */}
               <div className="h-12 border-b p-2 bg-gray-50 sticky top-0">
                 <div className="font-medium">{format(day, 'EEE')}</div>
                 <div className="text-xs text-gray-500">{format(day, 'MMM d')}</div>
               </div>
+              
+              {/* Current time line - only show for today's column */}
+              {isToday(day) && calculateTimeLinePosition() !== null && (
+                <div 
+                  className="absolute left-0 right-0 border-t border-red-500 z-10 pointer-events-none"
+                  style={{ 
+                    top: `${calculateTimeLinePosition() + 48}px`, // 48px offset for the header height
+                  }}
+                >
+                  <div className="absolute -left-1 -top-2 h-4 w-4 rounded-full bg-red-500" />
+                </div>
+              )}
               
               {/* Time slots */}
               {timeSlots.map((time, timeIndex) => {
