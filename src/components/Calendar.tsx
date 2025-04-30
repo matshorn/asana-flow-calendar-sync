@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { format, addDays, isToday } from 'date-fns';
@@ -19,21 +18,15 @@ const Calendar: React.FC = () => {
   } | null>(null);
   
   // For drag and drop functionality
-  const [dragging, setDragging] = useState<{
-    taskId: string;
-    startY: number;
-    originalTop: number;
-    originalStartTime: string;
-    originalDay: Date;
+  const [draggingTask, setDraggingTask] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+  const [dragPosition, setDragPosition] = useState<{ left: number, top: number } | null>(null);
+  const [originalTaskData, setOriginalTaskData] = useState<{
+    day: Date,
+    startTime: string,
+    rect: DOMRect
   } | null>(null);
   
-  // Track preview changes during resize or drag
-  const [previewChange, setPreviewChange] = useState<{
-    taskId: string;
-    height: number;
-    transform: string;
-  } | null>(null);
-
   const calendarRef = useRef<HTMLDivElement>(null);
   
   // Update current time every minute
@@ -276,117 +269,93 @@ const Calendar: React.FC = () => {
     document.removeEventListener('mouseup', handleResizeEnd);
   };
 
-  // Start dragging an event (to move it) - COMPLETELY REFACTORED
-  const handleDragStart = (
-    e: React.MouseEvent,
-    taskId: string,
-    element: HTMLDivElement
-  ) => {
-    // Make sure to prevent default and stop propagation
-    e.preventDefault();
+  // COMPLETELY NEW DRAG AND DROP IMPLEMENTATION
+  const handleMouseDown = (e: React.MouseEvent, taskId: string, day: Date, startTime: string) => {
+    if (e.button !== 0) return; // Only handle left clicks
+    
+    // Stop event propagation to prevent text selection
     e.stopPropagation();
+    e.preventDefault();
     
-    // Get task position and original scheduling data
-    const rect = element.getBoundingClientRect();
-    const task = tasks.find(t => t.id === taskId);
+    const taskElement = e.currentTarget as HTMLElement;
+    const rect = taskElement.getBoundingClientRect();
     
-    if (!task || !task.scheduledTime) return;
+    // Calculate click offset within the task element
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
     
-    // Set dragging state with all needed information
-    setDragging({
-      taskId,
-      startY: e.clientY,
-      originalTop: rect.top,
-      originalStartTime: task.scheduledTime.startTime,
-      originalDay: task.scheduledTime.day
+    setDraggingTask(taskId);
+    setDragOffset({ x: offsetX, y: offsetY });
+    setDragPosition({ left: rect.left, top: rect.top });
+    setOriginalTaskData({
+      day,
+      startTime,
+      rect
     });
     
-    // Set initial preview change
-    setPreviewChange({
-      taskId: taskId,
-      height: element.clientHeight,
-      transform: `translateY(0px)`
-    });
+    // Add global event listeners
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
     
-    // Use capture phase for event listeners to prevent other elements from interfering
-    document.addEventListener('mousemove', handleDragMove, true);
-    document.addEventListener('mouseup', handleDragEnd, true);
-    
-    // Add a global class to indicate dragging is active
+    // Add a class to the body to disable text selection during drag
     document.body.classList.add('calendar-dragging');
   };
   
-  // Handle mouse movement during drag - COMPLETELY REFACTORED
-  const handleDragMove = (e: MouseEvent) => {
-    if (!dragging) return;
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!draggingTask) return;
     
-    // Prevent text selection and other default behaviors during drag
+    // Prevent default to avoid text selection and other unwanted behaviors
     e.preventDefault();
     e.stopPropagation();
     
-    // Calculate how many pixels moved
-    const yDiff = e.clientY - dragging.startY;
-    
-    // Update the preview change with transformed position
-    setPreviewChange(prev => ({
-      taskId: dragging.taskId,
-      height: prev?.height || 24,
-      transform: `translateY(${yDiff}px)`
-    }));
+    // Update the position based on mouse position and original offset
+    setDragPosition({
+      left: e.clientX - dragOffset.x,
+      top: e.clientY - dragOffset.y
+    });
   };
   
-  // End dragging and apply changes - COMPLETELY REFACTORED
-  const handleDragEnd = (e: MouseEvent) => {
-    // Prevent default behaviors
-    e.preventDefault();
-    e.stopPropagation();
+  const handleMouseUp = (e: MouseEvent) => {
+    if (!draggingTask || !dragPosition || !originalTaskData || !calendarRef.current) return;
     
-    // Remove global class
+    // Clean up event listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
     document.body.classList.remove('calendar-dragging');
     
-    // Remove event listeners
-    document.removeEventListener('mousemove', handleDragMove, true);
-    document.removeEventListener('mouseup', handleDragEnd, true);
+    // Get the calendar container rect
+    const calendarRect = calendarRef.current.getBoundingClientRect();
     
-    if (!dragging || !previewChange) {
-      setDragging(null);
-      setPreviewChange(null);
-      return;
+    // Calculate the time slot height and day column width
+    const slotHeight = 24; // 15-min slot height in pixels
+    const columnWidth = calendarRect.width / days.length;
+    
+    // Determine which day column the drop occurred in
+    const dayIndex = Math.min(
+      days.length - 1,
+      Math.max(0, Math.floor((dragPosition.left - calendarRect.left) / columnWidth))
+    );
+    const targetDay = days[dayIndex];
+    
+    // Calculate the vertical position relative to the top of the calendar (adjusting for header)
+    const relativeY = dragPosition.top - calendarRect.top - 48; // 48px for header
+    
+    // Find which time slot this corresponds to (accounting for offset)
+    const slotIndex = Math.min(
+      timeSlots.length - 1,
+      Math.max(0, Math.floor(relativeY / slotHeight))
+    );
+    const targetTime = timeSlots[slotIndex];
+    
+    // Only update if the position actually changed
+    if (targetDay !== originalTaskData.day || targetTime !== originalTaskData.startTime) {
+      scheduleTask(draggingTask, targetDay, targetTime);
     }
     
-    // Calculate slots moved
-    const slotHeight = 24; // Height of each 15-minute slot in pixels
-    const transformMatch = previewChange.transform.match(/translateY\((-?\d+(\.\d+)?)px\)/);
-    const offsetY = transformMatch ? parseFloat(transformMatch[1]) : 0;
-    
-    // Calculate how many 15-minute slots were shifted
-    const slotsShifted = Math.round(offsetY / slotHeight);
-    
-    if (slotsShifted !== 0) {
-      // Parse original start time
-      const [oldHour, oldMinute] = dragging.originalStartTime.split(':').map(Number);
-      
-      // Calculate new start time
-      let totalMinutes = oldHour * 60 + oldMinute + (slotsShifted * 15);
-      let newHour = Math.floor(totalMinutes / 60);
-      let newMinute = totalMinutes % 60;
-      
-      // Bounds check (8:00 - 17:45)
-      if (newHour < 8) newHour = 8;
-      if (newHour > 17) newHour = 17;
-      if (newHour === 17 && newMinute > 45) newMinute = 45;
-      
-      const newStartTime = `${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`;
-      
-      // Only reschedule if the time actually changed
-      if (newStartTime !== dragging.originalStartTime) {
-        scheduleTask(dragging.taskId, dragging.originalDay, newStartTime);
-      }
-    }
-    
-    // Clean up
-    setDragging(null);
-    setPreviewChange(null);
+    // Reset dragging state
+    setDraggingTask(null);
+    setDragPosition(null);
+    setOriginalTaskData(null);
   };
 
   // Handle marking task as complete
@@ -412,7 +381,7 @@ const Calendar: React.FC = () => {
         cursor: grabbing !important;
       }
       body.calendar-dragging * {
-        pointer-events: none;
+        pointer-events: none !important;
       }
       .calendar-event {
         position: relative;
@@ -420,6 +389,15 @@ const Calendar: React.FC = () => {
       }
       .calendar-event.dragging {
         z-index: 100;
+      }
+      .task-card-dragging {
+        position: fixed !important;
+        opacity: 0.8 !important;
+        pointer-events: none !important;
+        z-index: 9999 !important;
+        width: calc(100% / 3 - 20px) !important;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+        transform: rotate(2deg) !important;
       }
     `;
     document.head.appendChild(style);
@@ -497,34 +475,28 @@ const Calendar: React.FC = () => {
                       <Card
                         id={`task-${task.id}`}
                         className={`m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all calendar-event ${
-                          dragging?.taskId === task.id || resizing?.taskId === task.id ? 'dragging cursor-grabbing' : 'cursor-grab'
-                        }`}
+                          task.id === draggingTask ? 'opacity-50' : ''
+                        } ${!task.completed ? 'cursor-grab active:cursor-grabbing' : ''}`}
                         style={{ 
                           backgroundColor: task.completed ? 'rgba(121, 110, 255, 0.05)' : 'rgba(121, 110, 255, 0.1)',
                           borderLeft: `3px solid ${task.completed ? '#a8a8a8' : (task.timeEstimate ? '#796eff' : '#fd7e42')}`,
-                          height: previewChange?.taskId === task.id 
-                            ? `${previewChange.height}px`
-                            : `calc(${getTaskDuration(task) * 24}px)`, // Convert slots to pixels (24px per slot)
-                          transform: previewChange?.taskId === task.id 
-                            ? previewChange.transform
-                            : undefined,
-                          zIndex: previewChange?.taskId === task.id ? 50 : 1,
-                          transition: (resizing || dragging) ? 'none' : 'all 0.2s ease',
+                          height: `${getTaskDuration(task) * 24}px`, // Convert slots to pixels (24px per slot)
                           textDecoration: task.completed ? 'line-through' : 'none',
                           opacity: task.completed ? 0.7 : 1,
-                          touchAction: 'none', // Improves touch device support
                         }}
                         onMouseDown={(e) => {
+                          // Don't initiate drag on completed tasks or when clicking buttons
                           if (task.completed) return;
                           
-                          // Don't start dragging if clicked on buttons/handles
                           const target = e.target as HTMLElement;
-                          const isActionButton = target.closest('.task-action-button');
-                          const isResizeHandle = target.closest('.resize-handle');
-                          
-                          if (!isActionButton && !isResizeHandle) {
-                            handleDragStart(e, task.id, e.currentTarget as HTMLDivElement);
+                          if (
+                            target.closest('.task-action-button') || 
+                            target.closest('.resize-handle')
+                          ) {
+                            return;
                           }
+                          
+                          handleMouseDown(e, task.id, day, time);
                         }}
                       >
                         {/* Top resize handle */}
@@ -595,6 +567,25 @@ const Calendar: React.FC = () => {
           ))}
         </div>
       </div>
+      
+      {/* Dragging preview (rendered outside the calendar grid) */}
+      {draggingTask && dragPosition && (
+        <Card
+          className="task-card-dragging"
+          style={{
+            left: `${dragPosition.left}px`,
+            top: `${dragPosition.top}px`,
+            backgroundColor: 'rgba(121, 110, 255, 0.2)',
+            borderLeft: '3px solid #796eff',
+            height: originalTaskData ? 
+              `${getTaskDuration(tasks.find(t => t.id === draggingTask)!) * 24}px` : 'auto'
+          }}
+        >
+          <div className="p-1">
+            {tasks.find(t => t.id === draggingTask)?.name}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
