@@ -23,9 +23,11 @@ const Calendar: React.FC = () => {
     taskId: string;
     startY: number;
     originalTop: number;
+    originalStartTime: string;
+    originalDay: Date;
   } | null>(null);
   
-  // Track preview changes during resize
+  // Track preview changes during resize or drag
   const [previewChange, setPreviewChange] = useState<{
     taskId: string;
     height: number;
@@ -274,7 +276,7 @@ const Calendar: React.FC = () => {
     document.removeEventListener('mouseup', handleResizeEnd);
   };
 
-  // Start dragging an event (to move it) - IMPROVED
+  // Start dragging an event (to move it) - COMPLETELY REFACTORED
   const handleDragStart = (
     e: React.MouseEvent,
     taskId: string,
@@ -284,46 +286,71 @@ const Calendar: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Get task position
+    // Get task position and original scheduling data
     const rect = element.getBoundingClientRect();
+    const task = tasks.find(t => t.id === taskId);
     
-    // Set dragging state
+    if (!task || !task.scheduledTime) return;
+    
+    // Set dragging state with all needed information
     setDragging({
       taskId,
       startY: e.clientY,
-      originalTop: rect.top
+      originalTop: rect.top,
+      originalStartTime: task.scheduledTime.startTime,
+      originalDay: task.scheduledTime.day
     });
     
-    // Add event listeners for mouse move and mouse up
-    document.addEventListener('mousemove', handleDragMove);
-    document.addEventListener('mouseup', handleDragEnd);
+    // Set initial preview change
+    setPreviewChange({
+      taskId: taskId,
+      height: element.clientHeight,
+      transform: `translateY(0px)`
+    });
+    
+    // Use capture phase for event listeners to prevent other elements from interfering
+    document.addEventListener('mousemove', handleDragMove, true);
+    document.addEventListener('mouseup', handleDragEnd, true);
+    
+    // Add a global class to indicate dragging is active
+    document.body.classList.add('calendar-dragging');
   };
   
-  // Handle mouse movement during drag - IMPROVED
+  // Handle mouse movement during drag - COMPLETELY REFACTORED
   const handleDragMove = (e: MouseEvent) => {
     if (!dragging) return;
     
-    // Prevent text selection during drag
+    // Prevent text selection and other default behaviors during drag
     e.preventDefault();
+    e.stopPropagation();
     
     // Calculate how many pixels moved
     const yDiff = e.clientY - dragging.startY;
     
     // Update the preview change with transformed position
-    setPreviewChange({
+    setPreviewChange(prev => ({
       taskId: dragging.taskId,
-      height: document.getElementById(`task-${dragging.taskId}`)?.clientHeight || 24,
+      height: prev?.height || 24,
       transform: `translateY(${yDiff}px)`
-    });
+    }));
   };
   
-  // End dragging and apply changes - IMPROVED
+  // End dragging and apply changes - COMPLETELY REFACTORED
   const handleDragEnd = (e: MouseEvent) => {
+    // Prevent default behaviors
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Remove global class
+    document.body.classList.remove('calendar-dragging');
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', handleDragMove, true);
+    document.removeEventListener('mouseup', handleDragEnd, true);
+    
     if (!dragging || !previewChange) {
       setDragging(null);
       setPreviewChange(null);
-      document.removeEventListener('mousemove', handleDragMove);
-      document.removeEventListener('mouseup', handleDragEnd);
       return;
     }
     
@@ -336,36 +363,30 @@ const Calendar: React.FC = () => {
     const slotsShifted = Math.round(offsetY / slotHeight);
     
     if (slotsShifted !== 0) {
-      // Find the task and update its start time
-      const task = tasks.find(t => t.id === dragging.taskId);
-      if (task && task.scheduledTime) {
-        const oldStartTime = task.scheduledTime.startTime;
-        const [oldHour, oldMinute] = oldStartTime.split(':').map(Number);
-        
-        // Calculate new start time
-        let totalMinutes = oldHour * 60 + oldMinute + (slotsShifted * 15);
-        let newHour = Math.floor(totalMinutes / 60);
-        let newMinute = totalMinutes % 60;
-        
-        // Bounds check (8:00 - 17:45)
-        if (newHour < 8) newHour = 8;
-        if (newHour > 17) newHour = 17;
-        if (newHour === 17 && newMinute > 45) newMinute = 45;
-        
-        const newStartTime = `${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`;
-        
-        // Only reschedule if the time actually changed
-        if (newStartTime !== oldStartTime) {
-          scheduleTask(task.id, task.scheduledTime.day, newStartTime);
-        }
+      // Parse original start time
+      const [oldHour, oldMinute] = dragging.originalStartTime.split(':').map(Number);
+      
+      // Calculate new start time
+      let totalMinutes = oldHour * 60 + oldMinute + (slotsShifted * 15);
+      let newHour = Math.floor(totalMinutes / 60);
+      let newMinute = totalMinutes % 60;
+      
+      // Bounds check (8:00 - 17:45)
+      if (newHour < 8) newHour = 8;
+      if (newHour > 17) newHour = 17;
+      if (newHour === 17 && newMinute > 45) newMinute = 45;
+      
+      const newStartTime = `${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`;
+      
+      // Only reschedule if the time actually changed
+      if (newStartTime !== dragging.originalStartTime) {
+        scheduleTask(dragging.taskId, dragging.originalDay, newStartTime);
       }
     }
     
     // Clean up
     setDragging(null);
     setPreviewChange(null);
-    document.removeEventListener('mousemove', handleDragMove);
-    document.removeEventListener('mouseup', handleDragEnd);
   };
 
   // Handle marking task as complete
@@ -375,12 +396,38 @@ const Calendar: React.FC = () => {
     markTaskComplete(taskId);
   };
 
-  // Remove task from calendar - IMPROVED
+  // Remove task from calendar
   const handleRemoveTask = (e: React.MouseEvent, taskId: string) => {
     e.preventDefault();
     e.stopPropagation();
     removeTaskFromCalendar(taskId);
   };
+  
+  // Add CSS to stop text selection during dragging operations
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      body.calendar-dragging {
+        user-select: none !important;
+        cursor: grabbing !important;
+      }
+      body.calendar-dragging * {
+        pointer-events: none;
+      }
+      .calendar-event {
+        position: relative;
+        z-index: 1;
+      }
+      .calendar-event.dragging {
+        z-index: 100;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   return (
     <div className="h-full flex flex-col" ref={calendarRef}>
@@ -449,34 +496,38 @@ const Calendar: React.FC = () => {
                     {task && !isContinuation && (
                       <Card
                         id={`task-${task.id}`}
-                        className={`m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all ${
-                          dragging?.taskId === task.id || resizing?.taskId === task.id ? 'cursor-grabbing' : 'cursor-grab'
+                        className={`m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all calendar-event ${
+                          dragging?.taskId === task.id || resizing?.taskId === task.id ? 'dragging cursor-grabbing' : 'cursor-grab'
                         }`}
                         style={{ 
                           backgroundColor: task.completed ? 'rgba(121, 110, 255, 0.05)' : 'rgba(121, 110, 255, 0.1)',
                           borderLeft: `3px solid ${task.completed ? '#a8a8a8' : (task.timeEstimate ? '#796eff' : '#fd7e42')}`,
                           height: previewChange?.taskId === task.id 
-                            ? `${previewChange.height - 4}px` // Subtract margin
-                            : `calc(${getTaskDuration(task) * 24 - 4}px)`, // Convert slots to pixels (24px per slot)
+                            ? `${previewChange.height}px`
+                            : `calc(${getTaskDuration(task) * 24}px)`, // Convert slots to pixels (24px per slot)
                           transform: previewChange?.taskId === task.id 
                             ? previewChange.transform
                             : undefined,
                           zIndex: previewChange?.taskId === task.id ? 50 : 1,
-                          transition: resizing || dragging ? 'none' : 'background-color 0.2s ease',
+                          transition: (resizing || dragging) ? 'none' : 'all 0.2s ease',
                           textDecoration: task.completed ? 'line-through' : 'none',
                           opacity: task.completed ? 0.7 : 1,
                           touchAction: 'none', // Improves touch device support
                         }}
                         onMouseDown={(e) => {
-                          // Only start dragging if not clicked on buttons/handles and task not completed
-                          if (!task.completed && 
-                              !(e.target as HTMLElement).closest('.task-action-button') && 
-                              !(e.target as HTMLElement).closest('.resize-handle')) {
+                          if (task.completed) return;
+                          
+                          // Don't start dragging if clicked on buttons/handles
+                          const target = e.target as HTMLElement;
+                          const isActionButton = target.closest('.task-action-button');
+                          const isResizeHandle = target.closest('.resize-handle');
+                          
+                          if (!isActionButton && !isResizeHandle) {
                             handleDragStart(e, task.id, e.currentTarget as HTMLDivElement);
                           }
                         }}
                       >
-                        {/* Top resize handle - IMPROVED */}
+                        {/* Top resize handle */}
                         {!task.completed && (
                           <div 
                             className="resize-handle absolute top-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
@@ -492,7 +543,7 @@ const Calendar: React.FC = () => {
                         <div className="font-medium truncate flex-1 flex items-center text-[10px] justify-between gap-1">
                           <span className={task.completed ? 'text-gray-500' : ''}>{task.name}</span>
                           <div className="flex items-center gap-1">
-                            {/* Remove task button - IMPROVED */}
+                            {/* Remove task button */}
                             <div 
                               className="task-action-button cursor-pointer opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
                               onClick={(e) => handleRemoveTask(e, task.id)}
@@ -500,7 +551,7 @@ const Calendar: React.FC = () => {
                             >
                               <Trash size={14} className="text-gray-400 hover:text-red-500" />
                             </div>
-                            {/* Complete task button - IMPROVED */}
+                            {/* Complete task button */}
                             <div 
                               className="task-action-button cursor-pointer"
                               onClick={(e) => handleMarkComplete(e, task.id)}
@@ -523,7 +574,7 @@ const Calendar: React.FC = () => {
                           </div>
                         )}
                         
-                        {/* Bottom resize handle - IMPROVED */}
+                        {/* Bottom resize handle */}
                         {!task.completed && (
                           <div 
                             className="resize-handle absolute bottom-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
