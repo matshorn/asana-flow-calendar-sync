@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { format, addDays } from 'date-fns';
@@ -91,6 +90,11 @@ const Calendar: React.FC = () => {
     return false;
   };
   
+  // Check if a task is short (30 minutes or less)
+  const isShortTask = (task: Task): boolean => {
+    return task.timeEstimate !== undefined && task.timeEstimate <= 30;
+  };
+
   // Handle drop of a task onto the calendar
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, day: Date, time: string) => {
     e.preventDefault();
@@ -296,12 +300,21 @@ const Calendar: React.FC = () => {
                           <StretchVertical className="h-2 w-4" />
                         </div>
                         
-                        <div className="font-medium truncate">{task.name}</div>
-                        {task.timeEstimate && (
-                          <div className="text-gray-500 mt-1">
-                            {Math.floor(task.timeEstimate / 60) > 0 && `${Math.floor(task.timeEstimate / 60)}h `}
-                            {task.timeEstimate % 60 > 0 && `${task.timeEstimate % 60}m`}
+                        {/* For short tasks (30 min or less), prioritize name display */}
+                        {isShortTask(task) ? (
+                          <div className="font-medium truncate flex-1 flex items-center">
+                            {task.name}
                           </div>
+                        ) : (
+                          <>
+                            <div className="font-medium truncate">{task.name}</div>
+                            {task.timeEstimate && (
+                              <div className="text-gray-500 mt-1">
+                                {Math.floor(task.timeEstimate / 60) > 0 && `${Math.floor(task.timeEstimate / 60)}h `}
+                                {task.timeEstimate % 60 > 0 && `${task.timeEstimate % 60}m`}
+                              </div>
+                            )}
+                          </>
                         )}
                         
                         {/* Bottom resize handle */}
