@@ -4,10 +4,10 @@ import { useTaskContext } from '@/context/TaskContext';
 import { format, addDays, isToday } from 'date-fns';
 import { Task } from '@/types';
 import { Card } from '@/components/ui/card';
-import { StretchVertical, CheckCircle, Circle } from 'lucide-react';
+import { StretchVertical, CheckCircle, Circle, Trash } from 'lucide-react';
 
 const Calendar: React.FC = () => {
-  const { tasks, scheduleTask, updateTaskTimeEstimate, markTaskComplete } = useTaskContext();
+  const { tasks, scheduleTask, updateTaskTimeEstimate, markTaskComplete, removeTaskFromCalendar } = useTaskContext();
   const today = new Date();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [resizing, setResizing] = useState<{
@@ -32,7 +32,7 @@ const Calendar: React.FC = () => {
     transform: string;
   } | null>(null);
 
-  const resizingRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
   
   // Update current time every minute
   useEffect(() => {
@@ -79,8 +79,8 @@ const Calendar: React.FC = () => {
     const minutesSinceStart = (currentHour - startHour) * 60 + currentMinute;
     
     // Height of each 15-min slot in px
-    const slotHeight = 24; // Reduced from 48px to 24px for 15-min slots
-    const slotsPerHour = 4; // Now 4 slots per hour (15 min each)
+    const slotHeight = 24; // Each 15-min slot is 24px tall
+    const slotsPerHour = 4; // 4 slots per hour (15 min each)
     
     // Calculate exact position in pixels
     const position = (minutesSinceStart / 60) * slotHeight * slotsPerHour;
@@ -109,19 +109,12 @@ const Calendar: React.FC = () => {
     });
   };
   
-  // Calculate the duration in 15-minute slots based on the new sizing rules
+  // Calculate the duration in 15-minute slots based on time estimate
   const getTaskDuration = (task: Task) => {
     if (!task.timeEstimate) return 2; // Default 30 minutes (2 slots of 15 min)
     
-    // New sizing rules
-    if (task.timeEstimate < 20) {
-      return 1; // 15 min (1 slot)
-    } else if (task.timeEstimate < 35) {
-      return 2; // 30 min (2 slots)
-    } else {
-      // Round to nearest 15 min increment
-      return Math.round(task.timeEstimate / 15);
-    }
+    // Size rules based on time estimate
+    return Math.ceil(task.timeEstimate / 15);
   };
   
   // Check if a slot is occupied by an already rendered task
@@ -250,7 +243,7 @@ const Calendar: React.FC = () => {
       // If dragging from the top, also update the start time
       if (resizing.edge === 'top' && task.scheduledTime) {
         // Calculate how many slots moved up/down
-        const slotsShifted = Math.round(-previewChange.transform.match(/-?\d+/)?.[0] / slotHeight) || 0;
+        const slotsShifted = Math.round(parseFloat(previewChange.transform.match(/translateY\((-?\d+(\.\d+)?)px\)/)?.[1] || '0') / slotHeight);
         
         if (slotsShifted !== 0) {
           const oldStartTime = task.scheduledTime.startTime;
@@ -319,11 +312,11 @@ const Calendar: React.FC = () => {
     const yDiff = e.clientY - dragging.startY;
     
     // Update the preview change
-    setPreviewChange({
+    setPreviewChange(prev => ({
       taskId: dragging.taskId,
-      height: 0, // Height is unchanged during drag
+      height: prev?.height || 0, // Keep existing height if available
       transform: `translateY(${yDiff}px)`
-    });
+    }));
   };
   
   // End dragging and apply changes
@@ -338,42 +331,35 @@ const Calendar: React.FC = () => {
     
     // Calculate slots moved
     const slotHeight = 24; // Height of each 15-minute slot in pixels
-    const offsetY = previewChange.transform.match(/-?\d+/)?.[0];
-    if (!offsetY) {
-      setDragging(null);
-      setPreviewChange(null);
-      document.removeEventListener('mousemove', handleDragMove);
-      document.removeEventListener('mouseup', handleDragEnd);
-      return;
-    }
+    const transformMatch = previewChange.transform.match(/translateY\((-?\d+(\.\d+)?)px\)/);
+    const offsetY = transformMatch ? parseFloat(transformMatch[1]) : 0;
     
-    const slotsShifted = Math.round(Number(offsetY) / slotHeight);
+    // Calculate how many 15-minute slots were shifted
+    const slotsShifted = Math.round(offsetY / slotHeight);
     
-    // Find the task and update its start time
-    const task = tasks.find(t => t.id === dragging.taskId);
-    if (task && task.scheduledTime) {
-      const oldStartTime = task.scheduledTime.startTime;
-      const [oldHour, oldMinute] = oldStartTime.split(':').map(Number);
-      
-      // Calculate new start time
-      let newHour = oldHour;
-      let newMinute = oldMinute;
-      
-      // Adjust time by 15 minutes slots
-      let totalMinutes = newHour * 60 + newMinute + (slotsShifted * 15);
-      newHour = Math.floor(totalMinutes / 60);
-      newMinute = totalMinutes % 60;
-      
-      // Bounds check (8:00 - 17:45)
-      if (newHour < 8) newHour = 8;
-      if (newHour > 17) newHour = 17;
-      if (newHour === 17 && newMinute > 45) newMinute = 45;
-      
-      const newStartTime = `${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`;
-      
-      // Only reschedule if the time actually changed
-      if (newStartTime !== oldStartTime) {
-        scheduleTask(task.id, task.scheduledTime.day, newStartTime);
+    if (slotsShifted !== 0) {
+      // Find the task and update its start time
+      const task = tasks.find(t => t.id === dragging.taskId);
+      if (task && task.scheduledTime) {
+        const oldStartTime = task.scheduledTime.startTime;
+        const [oldHour, oldMinute] = oldStartTime.split(':').map(Number);
+        
+        // Calculate new start time
+        let totalMinutes = oldHour * 60 + oldMinute + (slotsShifted * 15);
+        let newHour = Math.floor(totalMinutes / 60);
+        let newMinute = totalMinutes % 60;
+        
+        // Bounds check (8:00 - 17:45)
+        if (newHour < 8) newHour = 8;
+        if (newHour > 17) newHour = 17;
+        if (newHour === 17 && newMinute > 45) newMinute = 45;
+        
+        const newStartTime = `${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`;
+        
+        // Only reschedule if the time actually changed
+        if (newStartTime !== oldStartTime) {
+          scheduleTask(task.id, task.scheduledTime.day, newStartTime);
+        }
       }
     }
     
@@ -391,8 +377,15 @@ const Calendar: React.FC = () => {
     markTaskComplete(taskId);
   };
 
+  // Remove task from calendar
+  const handleRemoveTask = (e: React.MouseEvent, taskId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    removeTaskFromCalendar(taskId);
+  };
+
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col" ref={calendarRef}>
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold">Schedule</h2>
       </div>
@@ -457,14 +450,15 @@ const Calendar: React.FC = () => {
                   >
                     {task && !isContinuation && (
                       <Card
-                        ref={previewChange?.taskId === task.id ? resizingRef : undefined}
-                        className="m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all cursor-move"
+                        className={`m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all ${
+                          dragging?.taskId === task.id || resizing?.taskId === task.id ? 'cursor-grabbing' : 'cursor-grab'
+                        }`}
                         style={{ 
                           backgroundColor: task.completed ? 'rgba(121, 110, 255, 0.05)' : 'rgba(121, 110, 255, 0.1)',
                           borderLeft: `3px solid ${task.completed ? '#a8a8a8' : (task.timeEstimate ? '#796eff' : '#fd7e42')}`,
                           height: previewChange?.taskId === task.id 
                             ? `${previewChange.height - 4}px` // Subtract margin
-                            : `calc(${getTaskDuration(task) * 1.5}rem - 0.25rem)`,
+                            : `calc(${getTaskDuration(task) * 24 - 4}px)`, // Convert slots to pixels (24px per slot)
                           transform: previewChange?.taskId === task.id 
                             ? previewChange.transform
                             : undefined,
@@ -493,23 +487,34 @@ const Calendar: React.FC = () => {
                           </div>
                         )}
                         
-                        {/* For short tasks (15 min or less), prioritize name display */}
-                        <div className="font-medium truncate flex-1 flex items-center text-[10px] justify-between">
+                        <div className="font-medium truncate flex-1 flex items-center text-[10px] justify-between gap-1">
                           <span className={task.completed ? 'text-gray-500' : ''}>{task.name}</span>
-                          <div 
-                            className="cursor-pointer ml-1 flex-shrink-0"
-                            onClick={(e) => handleMarkComplete(e, task.id)}
-                          >
-                            {task.completed ? (
-                              <CheckCircle size={14} className="text-gray-400" />
-                            ) : (
-                              <Circle size={14} className="text-gray-400 hover:text-gray-600" />
-                            )}
+                          <div className="flex items-center gap-1">
+                            {/* Remove task button */}
+                            <div 
+                              className="cursor-pointer opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
+                              onClick={(e) => handleRemoveTask(e, task.id)}
+                              title="Remove from calendar"
+                            >
+                              <Trash size={14} className="text-gray-400 hover:text-red-500" />
+                            </div>
+                            {/* Complete task button */}
+                            <div 
+                              className="cursor-pointer"
+                              onClick={(e) => handleMarkComplete(e, task.id)}
+                              title={task.completed ? "Mark as incomplete" : "Mark as complete"}
+                            >
+                              {task.completed ? (
+                                <CheckCircle size={14} className="text-gray-400" />
+                              ) : (
+                                <Circle size={14} className="text-gray-400 hover:text-gray-600" />
+                              )}
+                            </div>
                           </div>
                         </div>
                         
                         {/* Show duration for non-short tasks */}
-                        {!isShortTask(task) && (
+                        {!isShortTask(task) && getTaskDuration(task) > 1 && (
                           <div className="text-gray-500 mt-0.5 text-[10px]">
                             {Math.floor(task.timeEstimate! / 60) > 0 && `${Math.floor(task.timeEstimate! / 60)}h `}
                             {task.timeEstimate! % 60 > 0 && `${task.timeEstimate! % 60}m`}

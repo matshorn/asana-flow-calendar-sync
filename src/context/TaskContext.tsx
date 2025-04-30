@@ -13,6 +13,7 @@ interface TaskContextType {
   setSelectedProjectId: (id: string | null) => void;
   updateTaskTimeEstimate: (taskId: string, timeEstimate: number) => void;
   scheduleTask: (taskId: string, day: Date, startTime: string) => void;
+  removeTaskFromCalendar: (taskId: string) => void;
   addTask: (task: Omit<Task, 'id'>) => void;
   syncWithAsana: () => Promise<void>;
   filteredTasks: Task[];
@@ -241,6 +242,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  const removeTaskFromCalendar = (taskId: string) => {
+    setTasks(prevTasks => 
+      prevTasks.map(task => {
+        if (task.id === taskId) {
+          // Remove the scheduledTime property from the task
+          const { scheduledTime, ...restTask } = task;
+          return restTask;
+        }
+        return task;
+      })
+    );
+    
+    toast({
+      title: "Task Removed from Calendar",
+      description: "The task has been removed from your schedule.",
+    });
+  };
+
   const addTask = (task: Omit<Task, 'id'>) => {
     const newTask: Task = {
       ...task,
@@ -297,6 +316,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSelectedProjectId,
       updateTaskTimeEstimate,
       scheduleTask,
+      removeTaskFromCalendar,
       addTask,
       syncWithAsana,
       filteredTasks,

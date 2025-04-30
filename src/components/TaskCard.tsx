@@ -16,6 +16,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
   const [timeEstimate, setTimeEstimate] = useState<string>(
     task.timeEstimate ? `${task.timeEstimate}` : ''
   );
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleTimeEstimateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -32,26 +33,35 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
 
   return (
     <Card 
-      className={`mb-2 p-3 border-l-4 cursor-move group hover:shadow-md transition-shadow ${task.completed ? 'opacity-70' : ''}`}
+      className={`mb-2 p-3 border-l-4 cursor-move group hover:shadow-md transition-shadow ${
+        task.completed ? 'opacity-70' : ''
+      } ${isDragging ? 'opacity-50' : ''}`}
       style={{ borderLeftColor: task.completed ? '#a8a8a8' : borderColor }}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('taskId', task.id);
-        const dragElement = e.currentTarget;
-        dragElement.classList.add('animate-task-drag');
+        setIsDragging(true);
         
-        // Add a small delay before setting a drag image to allow the animation to start
+        // Create a ghost image that matches the card appearance
+        const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+        dragImage.style.position = 'absolute';
+        dragImage.style.top = '-1000px';
+        dragImage.style.opacity = '0.5';
+        document.body.appendChild(dragImage);
+        
+        e.dataTransfer.setDragImage(
+          dragImage,
+          e.clientX - e.currentTarget.getBoundingClientRect().left,
+          e.clientY - e.currentTarget.getBoundingClientRect().top
+        );
+        
+        // Clean up the ghost image after a delay
         setTimeout(() => {
-          const rect = dragElement.getBoundingClientRect();
-          e.dataTransfer.setDragImage(
-            dragElement, 
-            e.clientX - rect.left, 
-            e.clientY - rect.top
-          );
-        }, 10);
+          document.body.removeChild(dragImage);
+        }, 100);
       }}
-      onDragEnd={(e) => {
-        e.currentTarget.classList.remove('animate-task-drag');
+      onDragEnd={() => {
+        setIsDragging(false);
       }}
     >
       <div className="flex items-center gap-2">
