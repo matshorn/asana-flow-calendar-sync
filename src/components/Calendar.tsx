@@ -250,13 +250,9 @@ const Calendar: React.FC = () => {
           const [oldHour, oldMinute] = oldStartTime.split(':').map(Number);
           
           // Calculate new start time
-          let newHour = oldHour;
-          let newMinute = oldMinute;
-          
-          // Adjust time by 15 minutes slots
-          let totalMinutes = newHour * 60 + newMinute - (slotsShifted * 15);
-          newHour = Math.floor(totalMinutes / 60);
-          newMinute = totalMinutes % 60;
+          let totalMinutes = oldHour * 60 + oldMinute - (slotsShifted * 15);
+          let newHour = Math.floor(totalMinutes / 60);
+          let newMinute = totalMinutes % 60;
           
           // Bounds check (8:00 - 17:45)
           if (newHour < 8) newHour = 8;
@@ -278,18 +274,20 @@ const Calendar: React.FC = () => {
     document.removeEventListener('mouseup', handleResizeEnd);
   };
 
-  // Start dragging an event (to move it)
+  // Start dragging an event (to move it) - IMPROVED
   const handleDragStart = (
     e: React.MouseEvent,
     taskId: string,
     element: HTMLDivElement
   ) => {
+    // Make sure to prevent default and stop propagation
     e.preventDefault();
     e.stopPropagation();
     
     // Get task position
     const rect = element.getBoundingClientRect();
     
+    // Set dragging state
     setDragging({
       taskId,
       startY: e.clientY,
@@ -301,7 +299,7 @@ const Calendar: React.FC = () => {
     document.addEventListener('mouseup', handleDragEnd);
   };
   
-  // Handle mouse movement during drag
+  // Handle mouse movement during drag - IMPROVED
   const handleDragMove = (e: MouseEvent) => {
     if (!dragging) return;
     
@@ -311,15 +309,15 @@ const Calendar: React.FC = () => {
     // Calculate how many pixels moved
     const yDiff = e.clientY - dragging.startY;
     
-    // Update the preview change
-    setPreviewChange(prev => ({
+    // Update the preview change with transformed position
+    setPreviewChange({
       taskId: dragging.taskId,
-      height: prev?.height || 0, // Keep existing height if available
+      height: document.getElementById(`task-${dragging.taskId}`)?.clientHeight || 24,
       transform: `translateY(${yDiff}px)`
-    }));
+    });
   };
   
-  // End dragging and apply changes
+  // End dragging and apply changes - IMPROVED
   const handleDragEnd = (e: MouseEvent) => {
     if (!dragging || !previewChange) {
       setDragging(null);
@@ -377,7 +375,7 @@ const Calendar: React.FC = () => {
     markTaskComplete(taskId);
   };
 
-  // Remove task from calendar
+  // Remove task from calendar - IMPROVED
   const handleRemoveTask = (e: React.MouseEvent, taskId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -450,6 +448,7 @@ const Calendar: React.FC = () => {
                   >
                     {task && !isContinuation && (
                       <Card
+                        id={`task-${task.id}`}
                         className={`m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all ${
                           dragging?.taskId === task.id || resizing?.taskId === task.id ? 'cursor-grabbing' : 'cursor-grab'
                         }`}
@@ -466,41 +465,44 @@ const Calendar: React.FC = () => {
                           transition: resizing || dragging ? 'none' : 'background-color 0.2s ease',
                           textDecoration: task.completed ? 'line-through' : 'none',
                           opacity: task.completed ? 0.7 : 1,
+                          touchAction: 'none', // Improves touch device support
                         }}
                         onMouseDown={(e) => {
-                          // Middle of the card - start dragging
-                          if (!task.completed) {
+                          // Only start dragging if not clicked on buttons/handles and task not completed
+                          if (!task.completed && 
+                              !(e.target as HTMLElement).closest('.task-action-button') && 
+                              !(e.target as HTMLElement).closest('.resize-handle')) {
                             handleDragStart(e, task.id, e.currentTarget as HTMLDivElement);
                           }
                         }}
                       >
-                        {/* Top resize handle */}
+                        {/* Top resize handle - IMPROVED */}
                         {!task.completed && (
                           <div 
-                            className="absolute top-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
+                            className="resize-handle absolute top-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
                             onMouseDown={(e) => {
                               const element = e.currentTarget.parentElement as HTMLDivElement;
                               handleResizeStart(e, task.id, getTaskDuration(task), 'top', element);
                             }}
                           >
-                            <StretchVertical className="h-1 w-3" />
+                            <StretchVertical className="h-2 w-3" />
                           </div>
                         )}
                         
                         <div className="font-medium truncate flex-1 flex items-center text-[10px] justify-between gap-1">
                           <span className={task.completed ? 'text-gray-500' : ''}>{task.name}</span>
                           <div className="flex items-center gap-1">
-                            {/* Remove task button */}
+                            {/* Remove task button - IMPROVED */}
                             <div 
-                              className="cursor-pointer opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
+                              className="task-action-button cursor-pointer opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
                               onClick={(e) => handleRemoveTask(e, task.id)}
                               title="Remove from calendar"
                             >
                               <Trash size={14} className="text-gray-400 hover:text-red-500" />
                             </div>
-                            {/* Complete task button */}
+                            {/* Complete task button - IMPROVED */}
                             <div 
-                              className="cursor-pointer"
+                              className="task-action-button cursor-pointer"
                               onClick={(e) => handleMarkComplete(e, task.id)}
                               title={task.completed ? "Mark as incomplete" : "Mark as complete"}
                             >
@@ -521,16 +523,16 @@ const Calendar: React.FC = () => {
                           </div>
                         )}
                         
-                        {/* Bottom resize handle */}
+                        {/* Bottom resize handle - IMPROVED */}
                         {!task.completed && (
                           <div 
-                            className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
+                            className="resize-handle absolute bottom-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
                             onMouseDown={(e) => {
                               const element = e.currentTarget.parentElement as HTMLDivElement;
                               handleResizeStart(e, task.id, getTaskDuration(task), 'bottom', element);
                             }}
                           >
-                            <StretchVertical className="h-1 w-3" />
+                            <StretchVertical className="h-2 w-3" />
                           </div>
                         )}
                       </Card>
