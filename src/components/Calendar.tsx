@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { format, addDays, isToday } from 'date-fns';
@@ -25,6 +26,12 @@ const Calendar: React.FC = () => {
     day: Date,
     startTime: string,
     rect: DOMRect
+  } | null>(null);
+  // Add preview change state for resizing
+  const [previewChange, setPreviewChange] = useState<{
+    taskId: string,
+    height: number,
+    transform: string
   } | null>(null);
   
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -269,7 +276,7 @@ const Calendar: React.FC = () => {
     document.removeEventListener('mouseup', handleResizeEnd);
   };
 
-  // COMPLETELY NEW DRAG AND DROP IMPLEMENTATION
+  // Handle mouse down on task to start dragging
   const handleMouseDown = (e: React.MouseEvent, taskId: string, day: Date, startTime: string) => {
     if (e.button !== 0) return; // Only handle left clicks
     
@@ -301,6 +308,7 @@ const Calendar: React.FC = () => {
     document.body.classList.add('calendar-dragging');
   };
   
+  // Handle mouse move during drag
   const handleMouseMove = (e: MouseEvent) => {
     if (!draggingTask) return;
     
@@ -315,6 +323,7 @@ const Calendar: React.FC = () => {
     });
   };
   
+  // Handle mouse up to end dragging
   const handleMouseUp = (e: MouseEvent) => {
     if (!draggingTask || !dragPosition || !originalTaskData || !calendarRef.current) return;
     
@@ -483,6 +492,10 @@ const Calendar: React.FC = () => {
                           height: `${getTaskDuration(task) * 24}px`, // Convert slots to pixels (24px per slot)
                           textDecoration: task.completed ? 'line-through' : 'none',
                           opacity: task.completed ? 0.7 : 1,
+                          ...(previewChange && previewChange.taskId === task.id ? {
+                            height: `${previewChange.height}px`,
+                            transform: previewChange.transform
+                          } : {})
                         }}
                         onMouseDown={(e) => {
                           // Don't initiate drag on completed tasks or when clicking buttons
