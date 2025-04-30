@@ -1,13 +1,20 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { format, addDays } from 'date-fns';
 import { CalendarSlot, Task } from '@/types';
 import { Card } from '@/components/ui/card';
+import { StretchVertical } from 'lucide-react';
 
 const Calendar: React.FC = () => {
-  const { tasks, scheduleTask } = useTaskContext();
+  const { tasks, scheduleTask, updateTaskTimeEstimate } = useTaskContext();
   const today = new Date();
+  const [resizing, setResizing] = useState<{
+    taskId: string;
+    startY: number;
+    startDuration: number;
+    edge: 'top' | 'bottom';
+  } | null>(null);
   
   // Generate 3 days (today + next 2 days)
   const days = [
@@ -87,6 +94,66 @@ const Calendar: React.FC = () => {
   const allowDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
+  
+  // Start resizing an event
+  const handleResizeStart = (
+    e: React.MouseEvent,
+    taskId: string,
+    currentDuration: number,
+    edge: 'top' | 'bottom'
+  ) => {
+    e.stopPropagation();
+    setResizing({
+      taskId,
+      startY: e.clientY,
+      startDuration: currentDuration,
+      edge
+    });
+    
+    // Add event listeners for mouse move and mouse up
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+  };
+  
+  // Handle mouse movement during resize
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!resizing) return;
+    
+    // Prevent text selection during resize
+    e.preventDefault();
+    
+    // Calculate how many 30-minute slots to add/remove based on mouse movement
+    const slotHeight = 48; // Height of each 30-minute slot in pixels (12px * 4)
+    const yDiff = e.clientY - resizing.startY;
+    
+    // Convert pixels to 30-minute slots (round to nearest)
+    const slotDiff = Math.round(yDiff / slotHeight);
+    
+    // Calculate new duration based on which edge is being dragged
+    let newDuration = resizing.startDuration;
+    if (resizing.edge === 'bottom') {
+      // When dragging bottom, increase/decrease duration directly
+      newDuration = Math.max(1, resizing.startDuration + slotDiff);
+    } else if (resizing.edge === 'top') {
+      // When dragging top, decrease duration but cannot go below 1
+      newDuration = Math.max(1, resizing.startDuration - slotDiff);
+    }
+    
+    // Find the task and update its time estimate
+    const task = tasks.find(t => t.id === resizing.taskId);
+    if (task) {
+      // Convert slots to minutes
+      const newEstimate = newDuration * 30;
+      updateTaskTimeEstimate(task.id, newEstimate);
+    }
+  };
+  
+  // End resizing
+  const handleResizeEnd = () => {
+    setResizing(null);
+    document.removeEventListener('mousemove', handleResizeMove);
+    document.removeEventListener('mouseup', handleResizeEnd);
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -130,13 +197,21 @@ const Calendar: React.FC = () => {
                   >
                     {task && !isContinuation && (
                       <Card
-                        className="m-1 p-2 text-xs h-full overflow-hidden flex flex-col"
+                        className="m-1 p-2 text-xs h-full overflow-hidden flex flex-col relative group"
                         style={{ 
                           backgroundColor: 'rgba(121, 110, 255, 0.1)',
                           borderLeft: `3px solid ${task.timeEstimate ? '#796eff' : '#fd7e42'}`,
                           height: `calc(${getTaskDuration(task) * 3}rem - 0.5rem)`,
                         }}
                       >
+                        {/* Top resize handle */}
+                        <div 
+                          className="absolute top-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-50 flex items-center justify-center"
+                          onMouseDown={(e) => handleResizeStart(e, task.id, getTaskDuration(task), 'top')}
+                        >
+                          <StretchVertical className="h-2 w-4" />
+                        </div>
+                        
                         <div className="font-medium truncate">{task.name}</div>
                         {task.timeEstimate && (
                           <div className="text-gray-500 mt-1">
@@ -144,6 +219,14 @@ const Calendar: React.FC = () => {
                             {task.timeEstimate % 60 > 0 && `${task.timeEstimate % 60}m`}
                           </div>
                         )}
+                        
+                        {/* Bottom resize handle */}
+                        <div 
+                          className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-50 flex items-center justify-center"
+                          onMouseDown={(e) => handleResizeStart(e, task.id, getTaskDuration(task), 'bottom')}
+                        >
+                          <StretchVertical className="h-2 w-4" />
+                        </div>
                       </Card>
                     )}
                   </div>
