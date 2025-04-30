@@ -9,6 +9,7 @@ export interface Task {
     startTime: string; // format "HH:MM"
     endTime?: string; // format "HH:MM"
   };
+  completed?: boolean;
 }
 
 export interface Project {

@@ -1,13 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
-import { format, addDays, parse, isToday } from 'date-fns';
+import { format, addDays, isToday } from 'date-fns';
 import { Task } from '@/types';
 import { Card } from '@/components/ui/card';
-import { StretchVertical } from 'lucide-react';
+import { StretchVertical, CheckCircle, Circle } from 'lucide-react';
 
 const Calendar: React.FC = () => {
-  const { tasks, scheduleTask, updateTaskTimeEstimate } = useTaskContext();
+  const { tasks, scheduleTask, updateTaskTimeEstimate, markTaskComplete } = useTaskContext();
   const today = new Date();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [resizing, setResizing] = useState<{
@@ -16,6 +16,13 @@ const Calendar: React.FC = () => {
     startDuration: number;
     edge: 'top' | 'bottom';
     originalHeight: number;
+  } | null>(null);
+  
+  // For drag and drop functionality
+  const [dragging, setDragging] = useState<{
+    taskId: string;
+    startY: number;
+    originalTop: number;
   } | null>(null);
   
   // Track preview changes during resize
@@ -46,7 +53,7 @@ const Calendar: React.FC = () => {
     addDays(today, 2),
   ];
   
-  // Generate time slots from 8:00 to 18:00 with 15 minute intervals (instead of 30)
+  // Generate time slots from 8:00 to 18:00 with 15 minute intervals
   const timeSlots = [];
   for (let hour = 8; hour < 18; hour++) {
     for (let minute = 0; minute < 60; minute += 15) {
@@ -102,12 +109,19 @@ const Calendar: React.FC = () => {
     });
   };
   
-  // Calculate the duration in 15-minute slots
+  // Calculate the duration in 15-minute slots based on the new sizing rules
   const getTaskDuration = (task: Task) => {
     if (!task.timeEstimate) return 2; // Default 30 minutes (2 slots of 15 min)
     
-    // Convert minutes to number of 15-minute slots
-    return Math.max(1, Math.ceil(task.timeEstimate / 15));
+    // New sizing rules
+    if (task.timeEstimate < 20) {
+      return 1; // 15 min (1 slot)
+    } else if (task.timeEstimate < 35) {
+      return 2; // 30 min (2 slots)
+    } else {
+      // Round to nearest 15 min increment
+      return Math.round(task.timeEstimate / 15);
+    }
   };
   
   // Check if a slot is occupied by an already rendered task
@@ -131,7 +145,7 @@ const Calendar: React.FC = () => {
   
   // Check if a task is short (15 minutes or less)
   const isShortTask = (task: Task): boolean => {
-    return task.timeEstimate !== undefined && task.timeEstimate <= 15;
+    return task.timeEstimate !== undefined && task.timeEstimate < 20;
   };
 
   // Handle drop of a task onto the calendar
@@ -271,6 +285,112 @@ const Calendar: React.FC = () => {
     document.removeEventListener('mouseup', handleResizeEnd);
   };
 
+  // Start dragging an event (to move it)
+  const handleDragStart = (
+    e: React.MouseEvent,
+    taskId: string,
+    element: HTMLDivElement
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Get task position
+    const rect = element.getBoundingClientRect();
+    
+    setDragging({
+      taskId,
+      startY: e.clientY,
+      originalTop: rect.top
+    });
+    
+    // Add event listeners for mouse move and mouse up
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+  };
+  
+  // Handle mouse movement during drag
+  const handleDragMove = (e: MouseEvent) => {
+    if (!dragging) return;
+    
+    // Prevent text selection during drag
+    e.preventDefault();
+    
+    // Calculate how many pixels moved
+    const yDiff = e.clientY - dragging.startY;
+    
+    // Update the preview change
+    setPreviewChange({
+      taskId: dragging.taskId,
+      height: 0, // Height is unchanged during drag
+      transform: `translateY(${yDiff}px)`
+    });
+  };
+  
+  // End dragging and apply changes
+  const handleDragEnd = (e: MouseEvent) => {
+    if (!dragging || !previewChange) {
+      setDragging(null);
+      setPreviewChange(null);
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      return;
+    }
+    
+    // Calculate slots moved
+    const slotHeight = 24; // Height of each 15-minute slot in pixels
+    const offsetY = previewChange.transform.match(/-?\d+/)?.[0];
+    if (!offsetY) {
+      setDragging(null);
+      setPreviewChange(null);
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      return;
+    }
+    
+    const slotsShifted = Math.round(Number(offsetY) / slotHeight);
+    
+    // Find the task and update its start time
+    const task = tasks.find(t => t.id === dragging.taskId);
+    if (task && task.scheduledTime) {
+      const oldStartTime = task.scheduledTime.startTime;
+      const [oldHour, oldMinute] = oldStartTime.split(':').map(Number);
+      
+      // Calculate new start time
+      let newHour = oldHour;
+      let newMinute = oldMinute;
+      
+      // Adjust time by 15 minutes slots
+      let totalMinutes = newHour * 60 + newMinute + (slotsShifted * 15);
+      newHour = Math.floor(totalMinutes / 60);
+      newMinute = totalMinutes % 60;
+      
+      // Bounds check (8:00 - 17:45)
+      if (newHour < 8) newHour = 8;
+      if (newHour > 17) newHour = 17;
+      if (newHour === 17 && newMinute > 45) newMinute = 45;
+      
+      const newStartTime = `${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`;
+      
+      // Only reschedule if the time actually changed
+      if (newStartTime !== oldStartTime) {
+        scheduleTask(task.id, task.scheduledTime.day, newStartTime);
+      }
+    }
+    
+    // Clean up
+    setDragging(null);
+    setPreviewChange(null);
+    document.removeEventListener('mousemove', handleDragMove);
+    document.removeEventListener('mouseup', handleDragEnd);
+  };
+
+  // Handle marking task as complete
+  const handleMarkComplete = (e: React.MouseEvent, taskId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    markTaskComplete(taskId);
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b">
@@ -282,14 +402,19 @@ const Calendar: React.FC = () => {
           <div className="w-16 flex-shrink-0">
             <div className="h-12"></div> {/* Empty cell for header row */}
             {timeSlots.map((time, index) => {
-              // Only show time label for every hour and 30min mark (so :00 and :30)
-              const showLabel = time.endsWith(':00') || time.endsWith(':30');
+              // Only show time label for full hours
+              const showLabel = time.endsWith(':00');
               return (
                 <div 
                   key={`time-${index}`} 
-                  className={`h-6 border-r ${showLabel ? 'border-b' : 'border-b border-gray-100'} p-1 text-xs text-gray-500 flex items-center justify-end pr-2`}
+                  className={`h-6 border-r ${time.endsWith(':00') ? 'border-b' : 'border-b border-gray-100'} p-1 text-xs text-gray-500 flex items-center justify-end pr-2 ${
+                    showLabel ? 'relative' : ''
+                  }`}
                 >
-                  {showLabel ? time : ''}
+                  {/* Position hour label below the line instead of above */}
+                  {showLabel ? (
+                    <span className="absolute -bottom-6 right-2">{time}</span>
+                  ) : ''}
                 </div>
               );
             })}
@@ -324,7 +449,7 @@ const Calendar: React.FC = () => {
                 return (
                   <div 
                     key={`slot-${dayIndex}-${timeIndex}`} 
-                    className={`h-6 border-r ${time.endsWith(':00') || time.endsWith(':30') ? 'border-b' : 'border-b border-gray-100'} ${
+                    className={`h-6 border-r ${time.endsWith(':00') ? 'border-b' : 'border-b border-gray-100'} ${
                       !task && !isContinuation ? 'hover:bg-gray-50' : ''
                     }`}
                     onDragOver={!task && !isContinuation ? allowDrop : undefined}
@@ -333,10 +458,10 @@ const Calendar: React.FC = () => {
                     {task && !isContinuation && (
                       <Card
                         ref={previewChange?.taskId === task.id ? resizingRef : undefined}
-                        className="m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all"
+                        className="m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all cursor-move"
                         style={{ 
-                          backgroundColor: 'rgba(121, 110, 255, 0.1)',
-                          borderLeft: `3px solid ${task.timeEstimate ? '#796eff' : '#fd7e42'}`,
+                          backgroundColor: task.completed ? 'rgba(121, 110, 255, 0.05)' : 'rgba(121, 110, 255, 0.1)',
+                          borderLeft: `3px solid ${task.completed ? '#a8a8a8' : (task.timeEstimate ? '#796eff' : '#fd7e42')}`,
                           height: previewChange?.taskId === task.id 
                             ? `${previewChange.height - 4}px` // Subtract margin
                             : `calc(${getTaskDuration(task) * 1.5}rem - 0.25rem)`,
@@ -344,47 +469,65 @@ const Calendar: React.FC = () => {
                             ? previewChange.transform
                             : undefined,
                           zIndex: previewChange?.taskId === task.id ? 50 : 1,
-                          transition: resizing ? 'none' : 'background-color 0.2s ease',
+                          transition: resizing || dragging ? 'none' : 'background-color 0.2s ease',
+                          textDecoration: task.completed ? 'line-through' : 'none',
+                          opacity: task.completed ? 0.7 : 1,
+                        }}
+                        onMouseDown={(e) => {
+                          // Middle of the card - start dragging
+                          if (!task.completed) {
+                            handleDragStart(e, task.id, e.currentTarget as HTMLDivElement);
+                          }
                         }}
                       >
                         {/* Top resize handle */}
-                        <div 
-                          className="absolute top-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
-                          onMouseDown={(e) => {
-                            const element = e.currentTarget.parentElement as HTMLDivElement;
-                            handleResizeStart(e, task.id, getTaskDuration(task), 'top', element);
-                          }}
-                        >
-                          <StretchVertical className="h-1 w-3" />
-                        </div>
+                        {!task.completed && (
+                          <div 
+                            className="absolute top-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
+                            onMouseDown={(e) => {
+                              const element = e.currentTarget.parentElement as HTMLDivElement;
+                              handleResizeStart(e, task.id, getTaskDuration(task), 'top', element);
+                            }}
+                          >
+                            <StretchVertical className="h-1 w-3" />
+                          </div>
+                        )}
                         
                         {/* For short tasks (15 min or less), prioritize name display */}
-                        {isShortTask(task) ? (
-                          <div className="font-medium truncate flex-1 flex items-center text-[10px]">
-                            {task.name}
-                          </div>
-                        ) : (
-                          <>
-                            <div className="font-medium truncate">{task.name}</div>
-                            {task.timeEstimate && (
-                              <div className="text-gray-500 mt-0.5 text-[10px]">
-                                {Math.floor(task.timeEstimate / 60) > 0 && `${Math.floor(task.timeEstimate / 60)}h `}
-                                {task.timeEstimate % 60 > 0 && `${task.timeEstimate % 60}m`}
-                              </div>
+                        <div className="font-medium truncate flex-1 flex items-center text-[10px] justify-between">
+                          <span className={task.completed ? 'text-gray-500' : ''}>{task.name}</span>
+                          <div 
+                            className="cursor-pointer ml-1 flex-shrink-0"
+                            onClick={(e) => handleMarkComplete(e, task.id)}
+                          >
+                            {task.completed ? (
+                              <CheckCircle size={14} className="text-gray-400" />
+                            ) : (
+                              <Circle size={14} className="text-gray-400 hover:text-gray-600" />
                             )}
-                          </>
+                          </div>
+                        </div>
+                        
+                        {/* Show duration for non-short tasks */}
+                        {!isShortTask(task) && (
+                          <div className="text-gray-500 mt-0.5 text-[10px]">
+                            {Math.floor(task.timeEstimate! / 60) > 0 && `${Math.floor(task.timeEstimate! / 60)}h `}
+                            {task.timeEstimate! % 60 > 0 && `${task.timeEstimate! % 60}m`}
+                          </div>
                         )}
                         
                         {/* Bottom resize handle */}
-                        <div 
-                          className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
-                          onMouseDown={(e) => {
-                            const element = e.currentTarget.parentElement as HTMLDivElement;
-                            handleResizeStart(e, task.id, getTaskDuration(task), 'bottom', element);
-                          }}
-                        >
-                          <StretchVertical className="h-1 w-3" />
-                        </div>
+                        {!task.completed && (
+                          <div 
+                            className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
+                            onMouseDown={(e) => {
+                              const element = e.currentTarget.parentElement as HTMLDivElement;
+                              handleResizeStart(e, task.id, getTaskDuration(task), 'bottom', element);
+                            }}
+                          >
+                            <StretchVertical className="h-1 w-3" />
+                          </div>
+                        )}
                       </Card>
                     )}
                   </div>

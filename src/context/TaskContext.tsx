@@ -18,6 +18,7 @@ interface TaskContextType {
   filteredTasks: Task[];
   asanaToken: string;
   setAsanaToken: (token: string) => void;
+  markTaskComplete: (taskId: string) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -181,6 +182,23 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ? tasks.filter(task => task.projectId === selectedProjectId) 
     : tasks;
 
+  // Mark a task as complete
+  const markTaskComplete = (taskId: string) => {
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === taskId 
+          ? { ...task, completed: !task.completed }  // Toggle completion state
+          : task
+      )
+    );
+    
+    const task = tasks.find(t => t.id === taskId);
+    toast({
+      title: task?.completed ? "Task Marked as Incomplete" : "Task Marked as Complete",
+      description: task?.name,
+    });
+  };
+
   const updateTaskTimeEstimate = (taskId: string, timeEstimate: number) => {
     setTasks(prevTasks => 
       prevTasks.map(task => 
@@ -251,6 +269,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
               ...mockTask,
               timeEstimate: existingTask.timeEstimate,
               scheduledTime: existingTask.scheduledTime,
+              completed: existingTask.completed,
             };
           }
           return mockTask;
@@ -283,6 +302,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       filteredTasks,
       asanaToken,
       setAsanaToken,
+      markTaskComplete,
     }}>
       {children}
     </TaskContext.Provider>
