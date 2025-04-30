@@ -194,12 +194,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       prevTasks.map(task => {
         if (task.id === taskId) {
           // Calculate end time based on task's time estimate
-          const timeEstimate = task.timeEstimate || 60; // default to 1 hour
+          // Now supporting 15-minute granularity
+          const timeEstimate = task.timeEstimate || 30; // default to 30 minutes
           const startTimeParts = startTime.split(':').map(Number);
-          let endHour = startTimeParts[0] + Math.floor(timeEstimate / 60);
-          let endMinute = startTimeParts[1] + (timeEstimate % 60);
           
-          if (endMinute >= 60) {
+          // Calculate new end time with proper minute handling
+          let endHour = startTimeParts[0];
+          let endMinute = startTimeParts[1] + timeEstimate;
+          
+          while (endMinute >= 60) {
             endHour += 1;
             endMinute -= 60;
           }

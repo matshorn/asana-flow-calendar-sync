@@ -46,10 +46,10 @@ const Calendar: React.FC = () => {
     addDays(today, 2),
   ];
   
-  // Generate time slots from 8:00 to 18:00 with 30 minute intervals
+  // Generate time slots from 8:00 to 18:00 with 15 minute intervals (instead of 30)
   const timeSlots = [];
   for (let hour = 8; hour < 18; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
+    for (let minute = 0; minute < 60; minute += 15) {
       timeSlots.push(
         `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
       );
@@ -71,9 +71,9 @@ const Calendar: React.FC = () => {
     const totalMinutesInDay = (18 - 8) * 60; // Total minutes in the calendar day (8:00-18:00)
     const minutesSinceStart = (currentHour - startHour) * 60 + currentMinute;
     
-    // Height of each hour (2 slots of 30 mins, each 48px high)
-    const slotHeight = 48; // Height of one 30-min slot in px
-    const slotsPerHour = 2;
+    // Height of each 15-min slot in px
+    const slotHeight = 24; // Reduced from 48px to 24px for 15-min slots
+    const slotsPerHour = 4; // Now 4 slots per hour (15 min each)
     
     // Calculate exact position in pixels
     const position = (minutesSinceStart / 60) * slotHeight * slotsPerHour;
@@ -102,18 +102,18 @@ const Calendar: React.FC = () => {
     });
   };
   
-  // Calculate the duration in 30-minute slots
+  // Calculate the duration in 15-minute slots
   const getTaskDuration = (task: Task) => {
-    if (!task.timeEstimate) return 1; // Default 30 minutes
+    if (!task.timeEstimate) return 2; // Default 30 minutes (2 slots of 15 min)
     
-    // Convert minutes to number of 30-minute slots
-    return Math.ceil(task.timeEstimate / 30);
+    // Convert minutes to number of 15-minute slots
+    return Math.max(1, Math.ceil(task.timeEstimate / 15));
   };
   
   // Check if a slot is occupied by an already rendered task
   const isSlotContinuation = (day: Date, time: string, index: number) => {
     // Look at previous slots to see if there's a task that spans over this slot
-    for (let i = 1; i <= 4; i++) { // Look back up to 2 hours (4 slots)
+    for (let i = 1; i <= 8; i++) { // Look back up to 2 hours (8 slots of 15 min each)
       if (index - i < 0) break;
       
       const previousTime = timeSlots[index - i];
@@ -129,9 +129,9 @@ const Calendar: React.FC = () => {
     return false;
   };
   
-  // Check if a task is short (30 minutes or less)
+  // Check if a task is short (15 minutes or less)
   const isShortTask = (task: Task): boolean => {
-    return task.timeEstimate !== undefined && task.timeEstimate <= 30;
+    return task.timeEstimate !== undefined && task.timeEstimate <= 15;
   };
 
   // Handle drop of a task onto the calendar
@@ -194,7 +194,7 @@ const Calendar: React.FC = () => {
     // Update the preview state based on which edge is being dragged
     if (resizing.edge === 'bottom') {
       // When dragging bottom, adjust height directly
-      const newHeight = Math.max(48, resizing.originalHeight + yDiff); // Minimum 1 slot (48px)
+      const newHeight = Math.max(24, resizing.originalHeight + yDiff); // Minimum 1 slot (24px)
       
       setPreviewChange(prev => prev ? {
         ...prev,
@@ -203,7 +203,7 @@ const Calendar: React.FC = () => {
     } else if (resizing.edge === 'top') {
       // When dragging top, adjust height and position (transform)
       const heightDiff = -yDiff;
-      const newHeight = Math.max(48, resizing.originalHeight + heightDiff); // Minimum 1 slot
+      const newHeight = Math.max(24, resizing.originalHeight + heightDiff); // Minimum 1 slot
       
       setPreviewChange(prev => prev ? {
         ...prev,
@@ -224,9 +224,9 @@ const Calendar: React.FC = () => {
     }
     
     // Calculate time estimate based on final height
-    const slotHeight = 48; // Height of each 30-minute slot in pixels
+    const slotHeight = 24; // Height of each 15-minute slot in pixels
     const newDurationSlots = Math.round(previewChange.height / slotHeight);
-    const newTimeEstimate = newDurationSlots * 30; // Convert slots to minutes
+    const newTimeEstimate = newDurationSlots * 15; // Convert slots to minutes
     
     // Find the task and update its time estimate
     const task = tasks.find(t => t.id === resizing.taskId);
@@ -246,15 +246,15 @@ const Calendar: React.FC = () => {
           let newHour = oldHour;
           let newMinute = oldMinute;
           
-          // Adjust time by 30 minutes slots
-          let totalMinutes = newHour * 60 + newMinute - (slotsShifted * 30);
+          // Adjust time by 15 minutes slots
+          let totalMinutes = newHour * 60 + newMinute - (slotsShifted * 15);
           newHour = Math.floor(totalMinutes / 60);
           newMinute = totalMinutes % 60;
           
-          // Bounds check (8:00 - 17:30)
+          // Bounds check (8:00 - 17:45)
           if (newHour < 8) newHour = 8;
           if (newHour > 17) newHour = 17;
-          if (newHour === 17 && newMinute > 30) newMinute = 30;
+          if (newHour === 17 && newMinute > 45) newMinute = 45;
           
           const newStartTime = `${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`;
           
@@ -281,11 +281,18 @@ const Calendar: React.FC = () => {
           {/* Time column */}
           <div className="w-16 flex-shrink-0">
             <div className="h-12"></div> {/* Empty cell for header row */}
-            {timeSlots.map((time, index) => (
-              <div key={`time-${index}`} className="h-12 border-r border-b p-1 text-xs text-gray-500 flex items-center justify-end pr-2">
-                {time}
-              </div>
-            ))}
+            {timeSlots.map((time, index) => {
+              // Only show time label for every hour and 30min mark (so :00 and :30)
+              const showLabel = time.endsWith(':00') || time.endsWith(':30');
+              return (
+                <div 
+                  key={`time-${index}`} 
+                  className={`h-6 border-r ${showLabel ? 'border-b' : 'border-b border-gray-100'} p-1 text-xs text-gray-500 flex items-center justify-end pr-2`}
+                >
+                  {showLabel ? time : ''}
+                </div>
+              );
+            })}
           </div>
           
           {/* Calendar days */}
@@ -317,7 +324,7 @@ const Calendar: React.FC = () => {
                 return (
                   <div 
                     key={`slot-${dayIndex}-${timeIndex}`} 
-                    className={`h-12 border-r border-b ${
+                    className={`h-6 border-r ${time.endsWith(':00') || time.endsWith(':30') ? 'border-b' : 'border-b border-gray-100'} ${
                       !task && !isContinuation ? 'hover:bg-gray-50' : ''
                     }`}
                     onDragOver={!task && !isContinuation ? allowDrop : undefined}
@@ -326,13 +333,13 @@ const Calendar: React.FC = () => {
                     {task && !isContinuation && (
                       <Card
                         ref={previewChange?.taskId === task.id ? resizingRef : undefined}
-                        className="m-1 p-2 text-xs overflow-hidden flex flex-col relative group transition-all"
+                        className="m-0.5 p-1 text-xs overflow-hidden flex flex-col relative group transition-all"
                         style={{ 
                           backgroundColor: 'rgba(121, 110, 255, 0.1)',
                           borderLeft: `3px solid ${task.timeEstimate ? '#796eff' : '#fd7e42'}`,
                           height: previewChange?.taskId === task.id 
-                            ? `${previewChange.height - 8}px` // Subtract margin
-                            : `calc(${getTaskDuration(task) * 3}rem - 0.5rem)`,
+                            ? `${previewChange.height - 4}px` // Subtract margin
+                            : `calc(${getTaskDuration(task) * 1.5}rem - 0.25rem)`,
                           transform: previewChange?.taskId === task.id 
                             ? previewChange.transform
                             : undefined,
@@ -342,25 +349,25 @@ const Calendar: React.FC = () => {
                       >
                         {/* Top resize handle */}
                         <div 
-                          className="absolute top-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
+                          className="absolute top-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
                           onMouseDown={(e) => {
                             const element = e.currentTarget.parentElement as HTMLDivElement;
                             handleResizeStart(e, task.id, getTaskDuration(task), 'top', element);
                           }}
                         >
-                          <StretchVertical className="h-2 w-4" />
+                          <StretchVertical className="h-1 w-3" />
                         </div>
                         
-                        {/* For short tasks (30 min or less), prioritize name display */}
+                        {/* For short tasks (15 min or less), prioritize name display */}
                         {isShortTask(task) ? (
-                          <div className="font-medium truncate flex-1 flex items-center">
+                          <div className="font-medium truncate flex-1 flex items-center text-[10px]">
                             {task.name}
                           </div>
                         ) : (
                           <>
                             <div className="font-medium truncate">{task.name}</div>
                             {task.timeEstimate && (
-                              <div className="text-gray-500 mt-1">
+                              <div className="text-gray-500 mt-0.5 text-[10px]">
                                 {Math.floor(task.timeEstimate / 60) > 0 && `${Math.floor(task.timeEstimate / 60)}h `}
                                 {task.timeEstimate % 60 > 0 && `${task.timeEstimate % 60}m`}
                               </div>
@@ -370,13 +377,13 @@ const Calendar: React.FC = () => {
                         
                         {/* Bottom resize handle */}
                         <div 
-                          className="absolute bottom-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
+                          className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
                           onMouseDown={(e) => {
                             const element = e.currentTarget.parentElement as HTMLDivElement;
                             handleResizeStart(e, task.id, getTaskDuration(task), 'bottom', element);
                           }}
                         >
-                          <StretchVertical className="h-2 w-4" />
+                          <StretchVertical className="h-1 w-3" />
                         </div>
                       </Card>
                     )}
