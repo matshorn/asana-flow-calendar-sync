@@ -1,0 +1,182 @@
+import React from 'react';
+import { useTaskContext } from '@/context/TaskContext';
+import TaskCard from '@/components/TaskCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { RefreshCcw, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const TaskList: React.FC = () => {
+  const { 
+    filteredTasks, 
+    projects, 
+    selectedProjectId, 
+    setSelectedProjectId,
+    syncWithAsana,
+    loading,
+    addTask
+  } = useTaskContext();
+  
+  const [newTaskName, setNewTaskName] = React.useState('');
+  const [newTaskProject, setNewTaskProject] = React.useState('');
+  const [newTaskEstimate, setNewTaskEstimate] = React.useState('');
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+
+  // Group tasks by project
+  const tasksByProject: Record<string, typeof filteredTasks> = {};
+  
+  filteredTasks.forEach(task => {
+    if (!tasksByProject[task.projectId]) {
+      tasksByProject[task.projectId] = [];
+    }
+    tasksByProject[task.projectId].push(task);
+  });
+
+  const handleAddTask = () => {
+    if (newTaskName && newTaskProject) {
+      addTask({
+        name: newTaskName,
+        projectId: newTaskProject,
+        timeEstimate: newTaskEstimate ? parseInt(newTaskEstimate) : undefined
+      });
+      
+      setNewTaskName('');
+      setNewTaskProject('');
+      setNewTaskEstimate('');
+      setDialogOpen(false);
+    }
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="p-4 border-b">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Tasks</h2>
+          <div className="flex gap-2">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="mr-1 h-4 w-4" /> Add Task
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Task</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="task-name">Task Name</Label>
+                    <Input 
+                      id="task-name" 
+                      value={newTaskName} 
+                      onChange={(e) => setNewTaskName(e.target.value)} 
+                      placeholder="Enter task name" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="task-project">Project</Label>
+                    <Select value={newTaskProject} onValueChange={setNewTaskProject}>
+                      <SelectTrigger id="task-project">
+                        <SelectValue placeholder="Select a project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map(project => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="task-estimate">Time Estimate (minutes)</Label>
+                    <Input 
+                      id="task-estimate" 
+                      value={newTaskEstimate} 
+                      onChange={(e) => setNewTaskEstimate(e.target.value)} 
+                      placeholder="e.g., 30" 
+                      type="number" 
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" onClick={handleAddTask}>Add Task</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => syncWithAsana()}
+              disabled={loading}
+            >
+              <RefreshCcw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Sync
+            </Button>
+          </div>
+        </div>
+        
+        <div className="mb-4">
+          <Select 
+            value={selectedProjectId || ''} 
+            onValueChange={(value) => setSelectedProjectId(value || null)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Projects</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto p-4">
+        {selectedProjectId ? (
+          // If a project is selected, show only those tasks
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">
+              {projects.find(p => p.id === selectedProjectId)?.name || 'Unknown Project'}
+            </h3>
+            {filteredTasks.map(task => (
+              <TaskCard 
+                key={task.id}
+                task={task}
+                project={projects.find(p => p.id === task.projectId)}
+              />
+            ))}
+            {filteredTasks.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No tasks in this project</p>
+            )}
+          </div>
+        ) : (
+          // Otherwise show tasks grouped by project
+          Object.entries(tasksByProject).map(([projectId, tasks]) => (
+            <div key={projectId} className="mb-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                {projects.find(p => p.id === projectId)?.name || 'Unknown Project'}
+              </h3>
+              {tasks.map(task => (
+                <TaskCard 
+                  key={task.id}
+                  task={task}
+                  project={projects.find(p => p.id === projectId)}
+                />
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default TaskList;

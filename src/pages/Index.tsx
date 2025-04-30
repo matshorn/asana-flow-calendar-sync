@@ -1,13 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import React from 'react';
+import { TaskProvider } from '@/context/TaskContext';
+import TaskList from '@/components/TaskList';
+import Calendar from '@/components/Calendar';
+import { Separator } from '@/components/ui/separator';
+
+const Index: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <TaskProvider>
+      <div className="min-h-screen flex flex-col">
+        <header className="border-b p-4 bg-white">
+          <h1 className="text-2xl font-bold text-asana-purple">Asana Flow Calendar</h1>
+        </header>
+        
+        <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* Task List Panel */}
+          <div className="w-full md:w-1/3 lg:w-1/4 border-r overflow-hidden flex flex-col">
+            <TaskList />
+          </div>
+          
+          {/* Calendar Panel */}
+          <div className="w-full md:w-2/3 lg:w-3/4 flex flex-col">
+            <Calendar />
+          </div>
+        </main>
       </div>
-    </div>
+    </TaskProvider>
   );
 };
 

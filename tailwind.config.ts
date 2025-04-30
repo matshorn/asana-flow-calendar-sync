@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -24,6 +25,13 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				asana: {
+					purple: '#796eff',
+					dark: '#2e3648',
+					light: '#f6f8f9',
+					green: '#25e8c8',
+					orange: '#fd7e42',
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
@@ -84,11 +92,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'task-drag': {
+					'0%': { transform: 'scale(1)', boxShadow: '0 0 0 rgba(0, 0, 0, 0)' },
+					'100%': { transform: 'scale(1.02)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'task-drag': 'task-drag 0.2s ease-out forwards'
 			}
 		}
 	},
