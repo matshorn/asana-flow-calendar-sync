@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { format, addDays, isToday } from 'date-fns';
@@ -342,24 +341,23 @@ const Calendar: React.FC = () => {
     // Determine which day column the drop occurred in
     const dayIndex = Math.min(
       days.length - 1,
-      Math.max(0, Math.floor((dragPosition.left - calendarRect.left) / columnWidth))
+      Math.max(0, Math.floor((e.clientX - calendarRect.left) / columnWidth))
     );
     const targetDay = days[dayIndex];
     
     // Calculate the vertical position relative to the top of the calendar (adjusting for header)
-    const relativeY = dragPosition.top - calendarRect.top - 48; // 48px for header
+    const headerHeight = 48; // Height of the day header
+    const relativeY = e.clientY - calendarRect.top - headerHeight;
     
-    // Find which time slot this corresponds to (accounting for offset)
+    // Find which time slot this corresponds to
     const slotIndex = Math.min(
       timeSlots.length - 1,
       Math.max(0, Math.floor(relativeY / slotHeight))
     );
     const targetTime = timeSlots[slotIndex];
     
-    // Only update if the position actually changed
-    if (targetDay !== originalTaskData.day || targetTime !== originalTaskData.startTime) {
-      scheduleTask(draggingTask, targetDay, targetTime);
-    }
+    // Update the task's schedule
+    scheduleTask(draggingTask, targetDay, targetTime);
     
     // Reset dragging state
     setDraggingTask(null);
