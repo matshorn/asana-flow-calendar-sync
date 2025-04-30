@@ -4,13 +4,17 @@ import { TaskProvider } from '@/context/TaskContext';
 import TaskList from '@/components/TaskList';
 import Calendar from '@/components/Calendar';
 import { Separator } from '@/components/ui/separator';
+import AsanaTokenForm from '@/components/AsanaTokenForm';
 
 const Index: React.FC = () => {
   return (
     <TaskProvider>
       <div className="min-h-screen flex flex-col">
         <header className="border-b p-4 bg-white">
-          <h1 className="text-2xl font-bold text-asana-purple">Asana Flow Calendar</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-asana-purple">Asana Flow Calendar</h1>
+            <AsanaTokenForm />
+          </div>
         </header>
         
         <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
