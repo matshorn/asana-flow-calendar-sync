@@ -385,10 +385,9 @@ const Calendar: React.FC = () => {
     style.innerHTML = `
       body.calendar-dragging {
         user-select: none !important;
-        cursor: grabbing !important;
       }
       body.calendar-dragging * {
-        pointer-events: none !important;
+        cursor: grabbing !important;
       }
       .calendar-event {
         position: relative;
@@ -405,6 +404,14 @@ const Calendar: React.FC = () => {
         width: calc(100% / 3 - 20px) !important;
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
         transform: rotate(2deg) !important;
+      }
+      
+      /* Prevent task buttons from triggering the drag */
+      .task-action-button {
+        pointer-events: auto !important;
+      }
+      .resize-handle {
+        pointer-events: auto !important;
       }
     `;
     document.head.appendChild(style);
