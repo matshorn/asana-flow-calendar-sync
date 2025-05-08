@@ -3,6 +3,7 @@ import React from 'react';
 import { TaskProvider } from '@/context/TaskContext';
 import TaskList from '@/components/TaskList';
 import Calendar from '@/components/Calendar';
+import ProjectColorMenu from '@/components/ProjectColorMenu';
 import { Separator } from '@/components/ui/separator';
 
 const Index: React.FC = () => {
@@ -12,6 +13,9 @@ const Index: React.FC = () => {
         <header className="border-b p-4 bg-white">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-asana-purple">Asana Flow Calendar</h1>
+            <div className="flex items-center gap-2">
+              <ProjectColorMenu />
+            </div>
           </div>
         </header>
         

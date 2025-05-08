@@ -141,6 +141,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     markTaskComplete,
     removeTaskFromCalendar,
     updateTaskName,
+    setProjects,
   };
 
   return (

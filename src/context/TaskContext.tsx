@@ -21,6 +21,7 @@ export interface TaskContextType {
   markTaskComplete: (taskId: string) => void;
   removeTaskFromCalendar: (taskId: string) => void;
   updateTaskName: (taskId: string, name: string) => void;
+  setProjects: (projects: Project[]) => void;
 }
 
 // Create the context with default values
@@ -41,6 +42,7 @@ const TaskContext = createContext<TaskContextType>({
   markTaskComplete: () => {},
   removeTaskFromCalendar: () => {},
   updateTaskName: () => {},
+  setProjects: () => {},
 });
 
 // Custom hook to use the context
