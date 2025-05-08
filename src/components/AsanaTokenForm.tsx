@@ -13,6 +13,7 @@ const AsanaTokenForm: React.FC = () => {
       size="sm" 
       onClick={() => syncWithAsana()}
       disabled={loading}
+      className="bg-gray-700 hover:bg-gray-600 text-gray-200"
     >
       <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
       Sync with Asana

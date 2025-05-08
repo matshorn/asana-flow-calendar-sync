@@ -85,7 +85,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
     <Card 
       className={`mb-2 p-3 border-l-4 cursor-move group hover:shadow-md transition-shadow ${
         isDragging ? 'opacity-50' : ''
-      } dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600`}
+      } bg-gray-700 text-gray-200 border-gray-600`}
       style={{ 
         borderLeftColor: projectColor,
         backgroundColor: `${projectColor}10` // Very light tint of the project color
@@ -96,7 +96,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
     >
       <div className="flex items-center gap-2">
         <div 
-          className="text-gray-400 hover:text-gray-600 cursor-pointer dark:text-gray-300 dark:hover:text-gray-100"
+          className="text-gray-400 hover:text-gray-300 cursor-pointer"
           onClick={() => markTaskComplete(task.id)}
           style={{ color: projectColor }}
         >
@@ -110,7 +110,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
               onChange={handleTaskNameChange}
               onBlur={handleTaskNameBlur}
               onKeyDown={handleKeyDown}
-              className="h-7 text-sm p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-gray-600 dark:text-gray-200"
+              className="h-7 text-sm p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-gray-600 text-gray-200"
               autoFocus
             />
           ) : (
@@ -118,7 +118,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
               {task.name}
             </div>
           )}
-          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+          <div className="text-xs text-gray-400 truncate">
             {project?.name || 'No project'}
           </div>
         </div>
@@ -128,7 +128,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
             value={timeEstimate}
             onChange={handleTimeEstimateChange}
             placeholder="mins"
-            className="h-7 w-full text-sm dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500"
+            className="h-7 w-full text-sm bg-gray-600 text-gray-200 border-gray-500"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

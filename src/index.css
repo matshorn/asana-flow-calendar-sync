@@ -131,3 +131,29 @@
   color: #f1f5f9; /* Slate-100 */
   border-color: #334155; /* Slate-700 */
 }
+
+/* Add explicit background colors for task panels and cards */
+.task-panel {
+  background-color: #111827; /* gray-900 */
+}
+
+.task-card {
+  background-color: #1f2937; /* gray-800 */
+  color: #e5e7eb; /* gray-200 */
+  border-color: #374151; /* gray-700 */
+}
+
+/* Ensure dialog backgrounds are correct in dark mode */
+.dark .dialog-content {
+  background-color: #1f2937; /* gray-800 */
+  border-color: #374151; /* gray-700 */
+}
+
+/* Make sure inputs have proper styling */
+.dark input, 
+.dark textarea, 
+.dark select {
+  background-color: #374151; /* gray-700 */
+  border-color: #4b5563; /* gray-600 */
+  color: #e5e7eb; /* gray-200 */
+}
