@@ -195,7 +195,7 @@ export const useAsanaSync = () => {
         }
         
         // Use the first workspace
-        const primaryWorkspace = workspaces[0];
+        const primaryWorkspace = workspaces[3];
         console.log("Using workspace:", primaryWorkspace.name);
         
         // Fetch projects in the workspace
