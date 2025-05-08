@@ -358,9 +358,13 @@ export const useCalendar = () => {
     );
     const targetDay = days[dayIndex];
     
-    // Calculate the vertical position relative to the top of the calendar (adjusting for header)
+    // Calculate the vertical position relative to the top of the calendar
+    // FIXED: Account for the actual position of the time slots and day header
     const headerHeight = 48; // Height of the day header
-    const relativeY = e.clientY - calendarRect.top - headerHeight;
+    
+    // Use the position of the drag shadow (pointer - offset) rather than cursor position
+    // This ensures the task lands where the shadow appears
+    const relativeY = dragPosition.top - calendarRect.top - headerHeight;
     
     // Find which time slot this corresponds to
     const slotIndex = Math.min(
@@ -368,6 +372,15 @@ export const useCalendar = () => {
       Math.max(0, Math.floor(relativeY / slotHeight))
     );
     const targetTime = timeSlots[slotIndex];
+    
+    console.log('Drop position calculation:', {
+      dragPosition: dragPosition,
+      calendarTop: calendarRect.top,
+      headerHeight,
+      relativeY,
+      slotIndex,
+      targetTime
+    });
     
     // Update the task's schedule
     scheduleTask(draggingTask, targetDay, targetTime);
