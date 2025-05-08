@@ -90,15 +90,12 @@ export const useAsanaSync = () => {
         return { projects, tasks: [] };
       }
       
-      // Assign some tasks to today for better demo experience
-      const tasksWithSchedule = asanaTransformer.assignTasksToToday(allTasks);
+      console.log("Sync completed. Fetched", allTasks.length, "tasks from", projects.length, "projects");
       
-      console.log("Sync completed. Fetched", tasksWithSchedule.length, "tasks from", projects.length, "projects");
-      
-      // Return the fetched data
+      // Return the fetched data without any automatic scheduling
       return {
         projects,
-        tasks: tasksWithSchedule
+        tasks: allTasks
       };
       
     } catch (error) {
