@@ -135,7 +135,7 @@ export const fetchTaskDetails = async (taskId: string): Promise<AsanaTask | null
 
 /**
  * Selects a workspace from the available workspaces
- * Returns the third workspace if available, otherwise the first
+ * Returns the fourth workspace if available, otherwise the first
  */
 export const selectWorkspace = (workspaces: AsanaWorkspace[]): AsanaWorkspace | null => {
   if (workspaces.length === 0) {
@@ -147,8 +147,8 @@ export const selectWorkspace = (workspaces: AsanaWorkspace[]): AsanaWorkspace | 
     return null;
   }
   
-  // Use the third workspace if available, otherwise use the first
-  const selectedWorkspaceIndex = workspaces.length >= 3 ? 2 : 0; // Index 2 is the third workspace
+  // Use the fourth workspace if available, otherwise use the first
+  const selectedWorkspaceIndex = workspaces.length >= 4 ? 3 : 0; // Index 3 is the fourth workspace
   const selectedWorkspace = workspaces[selectedWorkspaceIndex];
   console.log(`Using workspace: ${selectedWorkspace.name} (${selectedWorkspace.gid}) - Workspace index: ${selectedWorkspaceIndex}`);
   
