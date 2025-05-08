@@ -128,7 +128,7 @@ export const useAsanaSync = (asanaToken: string) => {
                 projectId: project.gid,
                 completed: taskData.completed,
                 timeEstimate: 30, // Default time estimate
-                notes: taskData.notes || ''
+                // Only adding fields that exist in the Task type
               });
             }
           } catch (error) {
