@@ -98,7 +98,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
         >
           <Circle size={18} />
         </div>
-        <div className="flex-1" onDoubleClick={() => setIsEditing(true)}>
+        <div className="flex-1 overflow-hidden" onDoubleClick={() => setIsEditing(true)}>
           {isEditing ? (
             <Input
               type="text"
@@ -110,11 +110,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
               autoFocus
             />
           ) : (
-            <div className="font-medium">
+            <div className="font-medium truncate">
               {task.name}
             </div>
           )}
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 truncate">
             {project?.name || 'No project'}
           </div>
         </div>

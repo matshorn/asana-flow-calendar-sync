@@ -43,11 +43,12 @@ const DragPreview: React.FC<DragPreviewProps> = ({
           `${getTaskDuration(task) * 24}px` : 'auto',
         zIndex: 50,
         opacity: 0.85,
-        width: '100%',
+        width: '200px', // Fixed width
         maxWidth: '200px',
+        overflow: 'hidden', // Prevent text overflow
       }}
     >
-      <div className="p-1">
+      <div className="p-1 text-sm truncate">
         {task.name}
       </div>
     </Card>
