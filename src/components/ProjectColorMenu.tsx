@@ -47,14 +47,13 @@ const ProjectColorMenu: React.FC = () => {
       <PopoverTrigger asChild>
         <Button 
           variant="secondary" 
-          size="sm" 
-          className="gap-2 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+          size="sm"
         >
           <Paintbrush className="h-4 w-4" />
           <span>Project Colors</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 dark:bg-gray-800 dark:border-gray-700">
+      <PopoverContent className="w-80 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
         <div className="space-y-4">
           <h4 className="font-medium leading-none mb-3">Manage Project Colors</h4>
           
@@ -62,7 +61,7 @@ const ProjectColorMenu: React.FC = () => {
             <Label htmlFor="project-select">Select Project</Label>
             <select 
               id="project-select"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
               value={selectedProject?.id || ''}
               onChange={(e) => {
                 const selected = projects.find(p => p.id === e.target.value);
@@ -108,13 +107,12 @@ const ProjectColorMenu: React.FC = () => {
                     type="color"
                     value={customColor}
                     onChange={(e) => setCustomColor(e.target.value)}
-                    className="dark:bg-gray-800 dark:border-gray-700"
+                    className="dark:bg-gray-700 dark:border-gray-600"
                   />
                   <Button 
                     onClick={() => updateProjectColor(selectedProject, customColor)}
                     size="sm"
                     variant="secondary"
-                    className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                   >
                     Apply
                   </Button>
@@ -124,7 +122,7 @@ const ProjectColorMenu: React.FC = () => {
           )}
 
           {!selectedProject && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground dark:text-gray-400">
               Select a project to customize its color.
             </p>
           )}

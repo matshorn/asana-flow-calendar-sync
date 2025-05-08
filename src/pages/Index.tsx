@@ -4,6 +4,7 @@ import { TaskProvider } from '@/context/TaskContext';
 import TaskList from '@/components/TaskList';
 import Calendar from '@/components/Calendar';
 import ProjectColorMenu from '@/components/ProjectColorMenu';
+import AsanaTokenForm from '@/components/AsanaTokenForm';
 import { Separator } from '@/components/ui/separator';
 
 const Index: React.FC = () => {
@@ -12,8 +13,9 @@ const Index: React.FC = () => {
       <div className="min-h-screen flex flex-col dark:bg-gray-900">
         <header className="border-b border-gray-700 p-4 dark:bg-gray-800">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-asana-purple">Asana Flow Calendar</h1>
+            <h1 className="text-2xl font-bold text-asana-purple dark:text-gray-200">Asana Flow Calendar</h1>
             <div className="flex items-center gap-2">
+              <AsanaTokenForm />
               <ProjectColorMenu />
             </div>
           </div>

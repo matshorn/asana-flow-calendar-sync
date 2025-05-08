@@ -61,8 +61,8 @@ const TaskList: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b">
+    <div className="h-full flex flex-col dark:bg-gray-800 dark:text-gray-200">
+      <div className="p-4 border-b border-gray-700">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Tasks</h2>
           <div className="flex gap-2">
@@ -84,12 +84,13 @@ const TaskList: React.FC = () => {
                       value={newTaskName} 
                       onChange={(e) => setNewTaskName(e.target.value)} 
                       placeholder="Enter task name" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="task-project">Project</Label>
                     <Select value={newTaskProject} onValueChange={setNewTaskProject}>
-                      <SelectTrigger id="task-project" className="dark:bg-gray-800">
+                      <SelectTrigger id="task-project" className="dark:bg-gray-700 dark:border-gray-600">
                         <SelectValue placeholder="Select a project" />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
@@ -109,7 +110,7 @@ const TaskList: React.FC = () => {
                       onChange={(e) => setNewTaskEstimate(e.target.value)} 
                       placeholder="e.g., 30" 
                       type="number" 
-                      className="dark:bg-gray-800 dark:border-gray-700"
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                 </div>
@@ -138,7 +139,7 @@ const TaskList: React.FC = () => {
               setSelectedProjectId(value === 'all' ? null : value);
             }}
           >
-            <SelectTrigger className="dark:bg-gray-800 dark:text-gray-200">
+            <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
               <SelectValue placeholder="Filter by project" />
             </SelectTrigger>
             <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
@@ -153,11 +154,11 @@ const TaskList: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-4 dark:bg-gray-800">
         {selectedProjectId ? (
           // If a project is selected, show only those tasks
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
               {projects.find(p => p.id === selectedProjectId)?.name || 'Unknown Project'}
             </h3>
             {filteredTasks.map(task => (
@@ -168,14 +169,14 @@ const TaskList: React.FC = () => {
               />
             ))}
             {filteredTasks.length === 0 && (
-              <p className="text-sm text-gray-500 italic">No tasks in this project</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic">No tasks in this project</p>
             )}
           </div>
         ) : (
           // Otherwise show tasks grouped by project
           Object.entries(tasksByProject).map(([projectId, tasks]) => (
             <div key={projectId} className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                 {projects.find(p => p.id === projectId)?.name || 'Unknown Project'}
               </h3>
               {tasks.map(task => (
@@ -189,7 +190,7 @@ const TaskList: React.FC = () => {
           ))
         )}
         {Object.keys(tasksByProject).length === 0 && (
-          <p className="text-sm text-gray-500 italic">No tasks found. Try syncing with Asana or adding a task.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 italic">No tasks found. Try syncing with Asana or adding a task.</p>
         )}
       </div>
     </div>
