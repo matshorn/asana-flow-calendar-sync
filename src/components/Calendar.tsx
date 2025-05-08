@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { format, addDays, isToday } from 'date-fns';
@@ -285,6 +284,16 @@ const Calendar: React.FC = () => {
   const handleMouseDown = (e: React.MouseEvent, taskId: string, day: Date, startTime: string) => {
     if (e.button !== 0) return; // Only handle left clicks
     
+    // If clicking on a button or resize handle or input, don't initiate drag
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('.task-action-button') || 
+      target.closest('.resize-handle') ||
+      target.closest('input')
+    ) {
+      return;
+    }
+    
     // Stop event propagation to prevent text selection
     e.stopPropagation();
     e.preventDefault();
@@ -533,21 +542,7 @@ const Calendar: React.FC = () => {
                             transform: previewChange.transform
                           } : {})
                         }}
-                        onMouseDown={(e) => {
-                          // Don't initiate drag on completed tasks or when clicking buttons
-                          if (task.completed) return;
-                          
-                          const target = e.target as HTMLElement;
-                          if (
-                            target.closest('.task-action-button') || 
-                            target.closest('.resize-handle') ||
-                            target.closest('input') // Don't drag when clicking input
-                          ) {
-                            return;
-                          }
-                          
-                          handleMouseDown(e, task.id, day, time);
-                        }}
+                        onMouseDown={!task.completed ? (e) => handleMouseDown(e, task.id, day, time) : undefined}
                       >
                         {/* Top resize handle */}
                         {!task.completed && (
