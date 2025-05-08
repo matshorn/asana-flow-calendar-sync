@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import TaskCard from '@/components/TaskCard';
@@ -71,7 +72,7 @@ const TaskList: React.FC = () => {
                   <Plus className="mr-1 h-4 w-4" /> Add Task
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="dark:bg-gray-800 dark:border-gray-700">
                 <DialogHeader>
                   <DialogTitle>Add New Task</DialogTitle>
                 </DialogHeader>
@@ -88,10 +89,10 @@ const TaskList: React.FC = () => {
                   <div className="grid gap-2">
                     <Label htmlFor="task-project">Project</Label>
                     <Select value={newTaskProject} onValueChange={setNewTaskProject}>
-                      <SelectTrigger id="task-project" className="bg-background">
+                      <SelectTrigger id="task-project" className="dark:bg-gray-800">
                         <SelectValue placeholder="Select a project" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                         {projects.map(project => (
                           <SelectItem key={project.id} value={project.id}>
                             {project.name}
@@ -108,6 +109,7 @@ const TaskList: React.FC = () => {
                       onChange={(e) => setNewTaskEstimate(e.target.value)} 
                       placeholder="e.g., 30" 
                       type="number" 
+                      className="dark:bg-gray-800 dark:border-gray-700"
                     />
                   </div>
                 </div>
@@ -136,10 +138,10 @@ const TaskList: React.FC = () => {
               setSelectedProjectId(value === 'all' ? null : value);
             }}
           >
-            <SelectTrigger className="bg-secondary text-secondary-foreground">
+            <SelectTrigger className="dark:bg-gray-800 dark:text-gray-200">
               <SelectValue placeholder="Filter by project" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
               <SelectItem value="all">All Projects</SelectItem>
               {projects.map((project) => (
                 <SelectItem key={project.id} value={project.id}>

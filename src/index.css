@@ -104,28 +104,30 @@
 /* Dark mode select and dropdown overrides */
 .dark .popover-content,
 .dark .select-content {
-  background-color: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
-  border-color: hsl(var(--border));
+  background-color: #1e293b; /* Slate-800 */
+  color: #f1f5f9; /* Slate-100 */
+  border-color: #334155; /* Slate-700 */
 }
 
 .dark .select-item:focus {
-  background-color: hsl(var(--muted));
-  color: hsl(var(--muted-foreground));
+  background-color: #334155; /* Slate-700 */
+  color: #f1f5f9; /* Slate-100 */
 }
 
 /* Ensure buttons in dark mode have proper contrast */
-.dark button.bg-secondary {
-  background-color: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
+.dark button.bg-secondary,
+.dark .button-secondary {
+  background-color: #1e293b; /* Slate-800 */
+  color: #f1f5f9; /* Slate-100 */
 }
 
-.dark button.bg-secondary:hover {
-  background-color: hsl(var(--muted));
+.dark button.bg-secondary:hover,
+.dark .button-secondary:hover {
+  background-color: #334155; /* Slate-700 */
 }
 
 .dark .select-trigger {
-  background-color: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
-  border-color: hsl(var(--border));
+  background-color: #1e293b; /* Slate-800 */
+  color: #f1f5f9; /* Slate-100 */
+  border-color: #334155; /* Slate-700 */
 }

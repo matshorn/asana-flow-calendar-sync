@@ -45,12 +45,16 @@ const ProjectColorMenu: React.FC = () => {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="sm" className="gap-2">
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          className="gap-2 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+        >
           <Paintbrush className="h-4 w-4" />
           <span>Project Colors</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-80 dark:bg-gray-800 dark:border-gray-700">
         <div className="space-y-4">
           <h4 className="font-medium leading-none mb-3">Manage Project Colors</h4>
           
@@ -58,7 +62,7 @@ const ProjectColorMenu: React.FC = () => {
             <Label htmlFor="project-select">Select Project</Label>
             <select 
               id="project-select"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700"
               value={selectedProject?.id || ''}
               onChange={(e) => {
                 const selected = projects.find(p => p.id === e.target.value);
@@ -83,7 +87,7 @@ const ProjectColorMenu: React.FC = () => {
                   {PRESET_COLORS.map(color => (
                     <button
                       key={color}
-                      className="w-6 h-6 rounded-full border border-gray-300 hover:scale-110 transition-transform"
+                      className="w-6 h-6 rounded-full border border-gray-300 hover:scale-110 transition-transform dark:border-gray-600"
                       style={{ backgroundColor: color }}
                       onClick={() => updateProjectColor(selectedProject, color)}
                       aria-label={`Set color to ${color}`}
@@ -96,7 +100,7 @@ const ProjectColorMenu: React.FC = () => {
                 <Label htmlFor="custom-color">Custom Color</Label>
                 <div className="flex gap-2">
                   <div 
-                    className="w-10 h-10 rounded border border-gray-300" 
+                    className="w-10 h-10 rounded border border-gray-300 dark:border-gray-600" 
                     style={{ backgroundColor: customColor }}
                   />
                   <Input
@@ -104,11 +108,13 @@ const ProjectColorMenu: React.FC = () => {
                     type="color"
                     value={customColor}
                     onChange={(e) => setCustomColor(e.target.value)}
+                    className="dark:bg-gray-800 dark:border-gray-700"
                   />
                   <Button 
                     onClick={() => updateProjectColor(selectedProject, customColor)}
                     size="sm"
                     variant="secondary"
+                    className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                   >
                     Apply
                   </Button>
