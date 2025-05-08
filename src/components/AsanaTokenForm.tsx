@@ -3,19 +3,37 @@ import React, { useState } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Key } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 const AsanaTokenForm: React.FC = () => {
-  const { asanaToken, setAsanaToken, syncWithAsana } = useTaskContext();
+  const { asanaToken, setAsanaToken, syncWithAsana, loading } = useTaskContext();
   const [tempToken, setTempToken] = useState(asanaToken);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!tempToken || tempToken.trim() === "") {
+      toast({
+        title: "Error",
+        description: "Please enter a valid Asana token",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setAsanaToken(tempToken);
     setIsDialogOpen(false);
+    
+    toast({
+      title: "Token Saved",
+      description: "Your Asana token has been saved. Syncing with Asana...",
+    });
+    
+    // Sync with Asana after setting the token
     syncWithAsana();
   };
 
@@ -30,6 +48,9 @@ const AsanaTokenForm: React.FC = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Asana Personal Access Token</DialogTitle>
+          <DialogDescription>
+            Connect your Asana account to sync your tasks and projects.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -49,7 +70,7 @@ const AsanaTokenForm: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Save Token</Button>
+            <Button type="submit" disabled={loading}>Save Token</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -58,6 +58,7 @@ export const useTaskStorage = () => {
     tasks,
     setTasks,
     projects,
+    setProjects,
     filteredTasks,
     selectedProjectId,
     setSelectedProjectId,

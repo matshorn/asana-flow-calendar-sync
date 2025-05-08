@@ -4,6 +4,7 @@ import { TaskContext } from './TaskContext';
 import { useTaskStorage } from './useTaskStorage';
 import { createTaskActions } from './taskActions';
 import { useAsanaSync } from './useAsanaSync';
+import { toast } from '@/components/ui/use-toast';
 
 // The provider component
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -12,6 +13,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     tasks,
     setTasks,
     projects,
+    setProjects,
     filteredTasks,
     selectedProjectId,
     setSelectedProjectId,
@@ -21,6 +23,21 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Get Asana sync functionality
   const { loading, syncWithAsana } = useAsanaSync(asanaToken);
+
+  // Function to handle Asana sync and update local data
+  const handleAsanaSync = async () => {
+    const data = await syncWithAsana();
+    
+    if (data) {
+      // Update tasks and projects with data from Asana
+      setTasks(data.tasks);
+      setProjects(data.projects);
+      toast({
+        title: "Sync Successful",
+        description: `Imported ${data.tasks.length} tasks from ${data.projects.length} projects.`,
+      });
+    }
+  };
 
   // Get task action functions
   const {
@@ -43,7 +60,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     asanaToken,
     setAsanaToken,
     loading,
-    syncWithAsana,
+    syncWithAsana: handleAsanaSync,
     createTask,
     addTask,
     updateTaskTimeEstimate,
