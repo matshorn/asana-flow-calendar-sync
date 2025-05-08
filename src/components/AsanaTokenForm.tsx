@@ -1,80 +1,22 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Key } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { RefreshCcw } from 'lucide-react';
 
 const AsanaTokenForm: React.FC = () => {
-  const { asanaToken, setAsanaToken, syncWithAsana, loading } = useTaskContext();
-  const [tempToken, setTempToken] = useState(asanaToken);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!tempToken || tempToken.trim() === "") {
-      toast({
-        title: "Error",
-        description: "Please enter a valid Asana token",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setAsanaToken(tempToken);
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "Token Saved",
-      description: "Your Asana token has been saved. Syncing with Asana...",
-    });
-    
-    // Sync with Asana after setting the token
-    syncWithAsana();
-  };
+  const { syncWithAsana, loading } = useTaskContext();
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Key className="mr-2 h-4 w-4" />
-          {asanaToken ? "Update Asana Token" : "Set Asana Token"}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Asana Personal Access Token</DialogTitle>
-          <DialogDescription>
-            Connect your Asana account to sync your tasks and projects.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="token">Token</Label>
-              <Input 
-                id="token"
-                type="password"
-                value={tempToken}
-                onChange={(e) => setTempToken(e.target.value)}
-                placeholder="Enter your Asana token"
-              />
-              <p className="text-xs text-gray-500">
-                You can create a Personal Access Token in Asana by going to 
-                My Profile Settings -&gt; Apps -&gt; Manage Developer Apps -&gt; Create New Personal Access Token.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={loading}>Save Token</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={() => syncWithAsana()}
+      disabled={loading}
+    >
+      <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+      Sync with Asana
+    </Button>
   );
 };
 

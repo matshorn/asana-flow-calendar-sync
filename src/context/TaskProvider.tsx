@@ -21,8 +21,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAsanaToken,
   } = useTaskStorage();
 
-  // Get Asana sync functionality
-  const { loading, syncWithAsana } = useAsanaSync(asanaToken);
+  // Get Asana sync functionality with hardcoded token
+  const { loading, syncWithAsana } = useAsanaSync();
 
   // Function to handle Asana sync and update local data
   const handleAsanaSync = async () => {

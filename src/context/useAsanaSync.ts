@@ -23,26 +23,20 @@ interface AsanaTask {
   notes: string;
 }
 
-export const useAsanaSync = (asanaToken: string) => {
+// Hardcoded Asana token
+const ASANA_TOKEN = "2/708730772520/1210120911116555:51c156887a0bebcf8c101daac7f13496";
+
+export const useAsanaSync = () => {
   const [loading, setLoading] = useState<boolean>(false);
   
   // Function to sync with Asana
   const syncWithAsana = async () => {
-    if (!asanaToken) {
-      toast({
-        title: "No Asana Token",
-        description: "Please set your Asana Personal Access Token first.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setLoading(true);
     try {
       // First, fetch user workspaces
       const workspacesResponse = await fetch('https://app.asana.com/api/1.0/workspaces', {
         headers: {
-          'Authorization': `Bearer ${asanaToken}`,
+          'Authorization': `Bearer ${ASANA_TOKEN}`,
           'Accept': 'application/json'
         }
       });
@@ -70,7 +64,7 @@ export const useAsanaSync = (asanaToken: string) => {
       // Fetch projects in the workspace
       const projectsResponse = await fetch(`https://app.asana.com/api/1.0/workspaces/${primaryWorkspace.gid}/projects`, {
         headers: {
-          'Authorization': `Bearer ${asanaToken}`,
+          'Authorization': `Bearer ${ASANA_TOKEN}`,
           'Accept': 'application/json'
         }
       });
@@ -95,7 +89,7 @@ export const useAsanaSync = (asanaToken: string) => {
       for (const project of asanaProjects) {
         const tasksResponse = await fetch(`https://app.asana.com/api/1.0/projects/${project.gid}/tasks`, {
           headers: {
-            'Authorization': `Bearer ${asanaToken}`,
+            'Authorization': `Bearer ${ASANA_TOKEN}`,
             'Accept': 'application/json'
           }
         });
@@ -113,7 +107,7 @@ export const useAsanaSync = (asanaToken: string) => {
           try {
             const taskDetailResponse = await fetch(`https://app.asana.com/api/1.0/tasks/${task.gid}`, {
               headers: {
-                'Authorization': `Bearer ${asanaToken}`,
+                'Authorization': `Bearer ${ASANA_TOKEN}`,
                 'Accept': 'application/json'
               }
             });
@@ -147,7 +141,7 @@ export const useAsanaSync = (asanaToken: string) => {
       console.error('Error syncing with Asana:', error);
       toast({
         title: "Sync Failed",
-        description: "Failed to sync with Asana. Please check your token and try again.",
+        description: "Failed to sync with Asana. Please check the console for details.",
         variant: "destructive",
       });
       return null;
