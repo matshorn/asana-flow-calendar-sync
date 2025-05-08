@@ -21,31 +21,48 @@ export const useTaskStorage = () => {
 
   // Load tasks and projects from localStorage on component mount
   useEffect(() => {
+    console.log("Loading data from localStorage");
     const storedTasks = localStorage.getItem('tasks');
     if (storedTasks) {
-      setTasks(JSON.parse(storedTasks));
+      try {
+        const parsedTasks = JSON.parse(storedTasks);
+        console.log("Loaded tasks from localStorage:", parsedTasks.length);
+        setTasks(parsedTasks);
+      } catch (e) {
+        console.error("Error parsing tasks from localStorage:", e);
+      }
     }
 
     const storedProjects = localStorage.getItem('projects');
     if (storedProjects) {
-      setProjects(JSON.parse(storedProjects));
+      try {
+        const parsedProjects = JSON.parse(storedProjects);
+        console.log("Loaded projects from localStorage:", parsedProjects.length);
+        setProjects(parsedProjects);
+      } catch (e) {
+        console.error("Error parsing projects from localStorage:", e);
+      }
     } else {
       // Add default projects if none exist
       const defaultProjects: Project[] = [
         { id: uuidv4(), name: "Work", color: "#796eff" },
         { id: uuidv4(), name: "Personal", color: "#ff8c00" }
       ];
+      console.log("Adding default projects:", defaultProjects);
       setProjects(defaultProjects);
       localStorage.setItem('projects', JSON.stringify(defaultProjects));
     }
   }, []);
 
-  // Save tasks and projects to localStorage whenever they change
+  // Save tasks to localStorage whenever they change
   useEffect(() => {
+    console.log("Saving tasks to localStorage:", tasks.length);
     localStorage.setItem('tasks', JSON.stringify(tasks));
   }, [tasks]);
 
+  // Save projects to localStorage whenever they change
   useEffect(() => {
+    console.log("Saving projects to localStorage:", projects.length);
     localStorage.setItem('projects', JSON.stringify(projects));
   }, [projects]);
 

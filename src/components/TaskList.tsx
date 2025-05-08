@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import TaskCard from '@/components/TaskCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 const TaskList: React.FC = () => {
   const { 
     filteredTasks, 
+    tasks,
     projects, 
     selectedProjectId, 
     setSelectedProjectId,
@@ -25,15 +26,27 @@ const TaskList: React.FC = () => {
   const [newTaskEstimate, setNewTaskEstimate] = React.useState('');
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log("TaskList rendered");
+    console.log("All tasks:", tasks);
+    console.log("Filtered tasks:", filteredTasks);
+    console.log("Selected project ID:", selectedProjectId);
+    console.log("Projects:", projects);
+  }, [tasks, filteredTasks, selectedProjectId, projects]);
+
   // Group tasks by project
   const tasksByProject: Record<string, typeof filteredTasks> = {};
   
   filteredTasks.forEach(task => {
+    console.log("Processing task for display:", task);
     if (!tasksByProject[task.projectId]) {
       tasksByProject[task.projectId] = [];
     }
     tasksByProject[task.projectId].push(task);
   });
+
+  console.log("Tasks grouped by project:", tasksByProject);
 
   const handleAddTask = () => {
     if (newTaskName && newTaskProject) {
@@ -111,7 +124,10 @@ const TaskList: React.FC = () => {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => syncWithAsana()}
+              onClick={() => {
+                console.log("Sync button clicked");
+                syncWithAsana();
+              }}
               disabled={loading}
             >
               <RefreshCcw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -123,7 +139,10 @@ const TaskList: React.FC = () => {
         <div className="mb-4">
           <Select 
             value={selectedProjectId || 'all'} 
-            onValueChange={(value) => setSelectedProjectId(value === 'all' ? null : value)}
+            onValueChange={(value) => {
+              console.log("Project filter changed to:", value);
+              setSelectedProjectId(value === 'all' ? null : value);
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Filter by project" />
@@ -141,6 +160,12 @@ const TaskList: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-auto p-4">
+        <div className="mb-3 p-2 bg-slate-100 rounded">
+          <p className="text-sm font-medium text-slate-700">Debug Info:</p>
+          <p className="text-xs text-slate-500">Total Tasks: {tasks.length}</p>
+          <p className="text-xs text-slate-500">Filtered Tasks: {filteredTasks.length}</p>
+          <p className="text-xs text-slate-500">Projects: {projects.length}</p>
+        </div>
         {selectedProjectId ? (
           // If a project is selected, show only those tasks
           <div>
@@ -174,6 +199,9 @@ const TaskList: React.FC = () => {
               ))}
             </div>
           ))
+        )}
+        {Object.keys(tasksByProject).length === 0 && (
+          <p className="text-sm text-gray-500 italic">No tasks found. Try syncing with Asana or adding a task.</p>
         )}
       </div>
     </div>

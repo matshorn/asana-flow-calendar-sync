@@ -31,9 +31,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       description: "Please wait while we fetch your data from Asana...",
     });
     
+    console.log("Starting Asana sync process...");
+    console.log("Current tasks before sync:", tasks);
+    console.log("Current projects before sync:", projects);
+    
     const data = await syncWithAsana();
     
     if (data) {
+      console.log("Sync data received:", data);
+      console.log("Tasks count:", data.tasks.length);
+      console.log("Projects count:", data.projects.length);
+      console.log("First few tasks:", data.tasks.slice(0, 3));
+      
       if (data.projects.length === 0) {
         toast({
           title: "No Projects Found",
@@ -57,6 +66,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update tasks and projects with data from Asana
       setTasks(data.tasks);
       setProjects(data.projects);
+      
+      // Wait for state update and verify
+      setTimeout(() => {
+        console.log("State after update - Tasks:", tasks);
+        console.log("State after update - Projects:", projects);
+        console.log("State after update - Filtered tasks:", filteredTasks);
+      }, 100);
       
       // Count scheduled tasks
       const scheduledTasks = data.tasks.filter(task => task.scheduledTime).length;
@@ -84,6 +100,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeTaskFromCalendar,
     updateTaskName,
   } = createTaskActions(setTasks);
+
+  // Log tasks whenever they change
+  React.useEffect(() => {
+    console.log("Tasks updated in TaskProvider:", tasks.length);
+    console.log("Filtered tasks in TaskProvider:", filteredTasks.length);
+    console.log("Selected project:", selectedProjectId);
+  }, [tasks, filteredTasks, selectedProjectId]);
 
   // Context value
   const value = {
