@@ -24,17 +24,27 @@ const DragPreview: React.FC<DragPreviewProps> = ({
 
   const task = tasks.find(t => t.id === draggingTask);
   if (!task) return null;
+  
+  // Find the project's color for this task
+  const projectId = task.projectId;
+  const projectColor = projectId ? '#796eff' : '#796eff'; // Default fallback color
 
   return (
     <Card
-      className="task-card-dragging"
+      className="task-card-dragging pointer-events-none"
       style={{
+        position: 'fixed',
         left: `${dragPosition.left}px`,
         top: `${dragPosition.top}px`,
         backgroundColor: 'rgba(121, 110, 255, 0.2)',
-        borderLeft: '3px solid #796eff',
+        borderLeft: '3px solid',
+        borderLeftColor: projectColor,
         height: originalTaskData ? 
-          `${getTaskDuration(task) * 24}px` : 'auto'
+          `${getTaskDuration(task) * 24}px` : 'auto',
+        zIndex: 50,
+        opacity: 0.85,
+        width: '100%',
+        maxWidth: '200px',
       }}
     >
       <div className="p-1">

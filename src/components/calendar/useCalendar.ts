@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Task } from '@/types';
 import { format, addDays, isToday } from 'date-fns';
@@ -349,22 +350,22 @@ export const useCalendar = () => {
     
     // Calculate the time slot height and day column width
     const slotHeight = 24; // 15-min slot height in pixels
-    const columnWidth = calendarRect.width / days.length;
+    const dayHeaderHeight = 48; // Height of the day header
+    const timeColumnWidth = 60; // Width of the time column on the left
+    const availableWidth = calendarRect.width - timeColumnWidth;
+    const columnWidth = availableWidth / days.length;
     
     // Determine which day column the drop occurred in
+    // We use the shadow's position, not the mouse position
     const dayIndex = Math.min(
       days.length - 1,
-      Math.max(0, Math.floor((e.clientX - calendarRect.left) / columnWidth))
+      Math.max(0, Math.floor((dragPosition.left + dragOffset.x - calendarRect.left - timeColumnWidth) / columnWidth))
     );
     const targetDay = days[dayIndex];
     
-    // Calculate the vertical position relative to the top of the calendar
-    // FIXED: Account for the actual position of the time slots and day header
-    const headerHeight = 48; // Height of the day header
-    
-    // Use the position of the drag shadow (pointer - offset) rather than cursor position
-    // This ensures the task lands where the shadow appears
-    const relativeY = dragPosition.top - calendarRect.top - headerHeight;
+    // Calculate time slot based on the shadow's top position
+    // This is crucial: we use the shadow's position, not the mouse position
+    const relativeY = dragPosition.top - calendarRect.top - dayHeaderHeight;
     
     // Find which time slot this corresponds to
     const slotIndex = Math.min(
@@ -374,12 +375,21 @@ export const useCalendar = () => {
     const targetTime = timeSlots[slotIndex];
     
     console.log('Drop position calculation:', {
-      dragPosition: dragPosition,
-      calendarTop: calendarRect.top,
-      headerHeight,
+      dragPosition,
+      calendarRect: {
+        top: calendarRect.top,
+        left: calendarRect.left,
+        width: calendarRect.width
+      },
+      dayHeaderHeight,
+      timeColumnWidth,
+      columnWidth,
+      mousePosition: { x: e.clientX, y: e.clientY },
+      dayIndex,
       relativeY,
       slotIndex,
-      targetTime
+      targetTime,
+      dragOffset
     });
     
     // Update the task's schedule
