@@ -32,8 +32,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     
     console.log("Starting Asana sync process...");
-    console.log("Current tasks before sync:", tasks);
-    console.log("Current projects before sync:", projects);
+    console.log("Current tasks before sync:", tasks.length);
+    console.log("Current projects before sync:", projects.length);
     
     try {
       const data = await syncWithAsana();
@@ -65,15 +65,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Updating local state with synced data");
         
         // Update tasks and projects with data from Asana
-        setTasks(data.tasks);
-        setProjects(data.projects);
+        setTasks([...data.tasks]);
+        setProjects([...data.projects]);
         
-        // Wait for state update and verify
-        setTimeout(() => {
-          console.log("State after update - Tasks:", tasks);
-          console.log("State after update - Projects:", projects);
-          console.log("State after update - Filtered tasks:", filteredTasks);
-        }, 100);
+        console.log("Updated tasks:", data.tasks.length);
+        console.log("Updated projects:", data.projects.length);
         
         // If no project is selected, select the first one
         if (!selectedProjectId && data.projects.length > 0) {
@@ -89,6 +85,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: `Imported ${data.tasks.length} tasks from ${data.projects.length} projects. ${scheduledTasks} tasks scheduled on calendar.`,
         });
       } else {
+        console.error("Sync returned null data");
         toast({
           title: "Sync Failed",
           description: "Failed to sync with Asana. Please check the console for details.",

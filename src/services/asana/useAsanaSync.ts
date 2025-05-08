@@ -19,18 +19,22 @@ export const useAsanaSync = () => {
     try {
       // Fetch workspaces
       const workspaces = await asanaApi.fetchWorkspaces();
+      console.log("Fetched workspaces:", workspaces.length);
       
       // Select appropriate workspace
       const selectedWorkspace = asanaApi.selectWorkspace(workspaces);
       if (!selectedWorkspace) {
+        console.error("No workspace selected");
         setLoading(false);
         return null;
       }
       
       // Fetch projects for the selected workspace
       const asanaProjects = await asanaApi.fetchProjects(selectedWorkspace.gid);
+      console.log("Fetched Asana projects:", asanaProjects.length);
       
       if (asanaProjects.length === 0) {
+        console.error("No projects found in workspace");
         toast({
           title: "No Projects Found",
           description: "No projects were found in your Asana workspace.",
@@ -42,6 +46,7 @@ export const useAsanaSync = () => {
       
       // Transform Asana projects to our app's format
       const projects = asanaTransformer.transformProjects(asanaProjects);
+      console.log("Transformed projects:", projects.length);
       
       // Fetch tasks for each project
       const allTasks: Task[] = [];
@@ -49,22 +54,33 @@ export const useAsanaSync = () => {
       console.log("Fetching tasks for", asanaProjects.length, "projects...");
       
       for (const project of asanaProjects) {
+        console.log(`Fetching tasks for project: ${project.name} (${project.gid})`);
         const projectTasks = await asanaApi.fetchTasksForProject(project.gid);
+        console.log(`Fetched ${projectTasks.length} tasks for project ${project.name}`);
         
         // Get full task details for each task
         for (const task of projectTasks) {
-          const taskDetail = await asanaApi.fetchTaskDetails(task.gid);
-          if (taskDetail) {
-            const transformedTask = asanaTransformer.transformTask(taskDetail, project.gid);
-            if (transformedTask) {
-              allTasks.push(transformedTask);
-              console.log("Added task:", taskDetail.name);
+          try {
+            const taskDetail = await asanaApi.fetchTaskDetails(task.gid);
+            if (taskDetail) {
+              const transformedTask = asanaTransformer.transformTask(taskDetail, project.gid);
+              if (transformedTask) {
+                allTasks.push(transformedTask);
+                console.log("Added task:", taskDetail.name);
+              }
+            } else {
+              console.log(`Skipping task ${task.gid} - no details returned`);
             }
+          } catch (error) {
+            console.error(`Error fetching details for task ${task.gid}:`, error);
           }
         }
       }
       
+      console.log("All tasks fetched:", allTasks.length);
+      
       if (allTasks.length === 0) {
+        console.warn("No tasks found in any projects");
         toast({
           title: "No Tasks Found",
           description: "No tasks were found in your Asana projects.",
