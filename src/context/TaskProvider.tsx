@@ -64,11 +64,17 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         console.log("Updating local state with synced data");
         
+        // Process tasks to remove any automatic scheduling
+        const tasksWithoutSchedule = data.tasks.map(task => ({
+          ...task,
+          scheduledTime: undefined // Remove any auto-scheduling
+        }));
+        
         // Update tasks and projects with data from Asana
-        setTasks([...data.tasks]);
+        setTasks([...tasksWithoutSchedule]);
         setProjects([...data.projects]);
         
-        console.log("Updated tasks:", data.tasks.length);
+        console.log("Updated tasks:", tasksWithoutSchedule.length);
         console.log("Updated projects:", data.projects.length);
         
         // If no project is selected, select the first one
@@ -77,12 +83,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSelectedProjectId(data.projects[0].id);
         }
         
-        // Count scheduled tasks
-        const scheduledTasks = data.tasks.filter(task => task.scheduledTime).length;
-        
         toast({
           title: "Sync Successful",
-          description: `Imported ${data.tasks.length} tasks from ${data.projects.length} projects. ${scheduledTasks} tasks scheduled on calendar.`,
+          description: `Imported ${data.tasks.length} tasks from ${data.projects.length} projects. Tasks must be manually scheduled on calendar.`,
         });
       } else {
         console.error("Sync returned null data");
