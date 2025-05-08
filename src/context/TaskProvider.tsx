@@ -3,7 +3,7 @@ import React from 'react';
 import { TaskContext } from './TaskContext';
 import { useTaskStorage } from './useTaskStorage';
 import { createTaskActions } from './taskActions';
-import { useAsanaSync } from './useAsanaSync';
+import { useAsanaSync } from '@/services/asana/useAsanaSync';
 import { toast } from '@/components/ui/use-toast';
 
 // The provider component
