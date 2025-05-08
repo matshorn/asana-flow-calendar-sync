@@ -9,7 +9,7 @@ const AsanaTokenForm: React.FC = () => {
 
   return (
     <Button 
-      variant="outline" 
+      variant="default" 
       size="sm" 
       onClick={() => syncWithAsana()}
       disabled={loading}

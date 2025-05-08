@@ -31,9 +31,11 @@ export const useAsanaSync = () => {
   
   // Function to sync with Asana
   const syncWithAsana = async () => {
+    console.log("Starting Asana sync...");
     setLoading(true);
     try {
       // First, fetch user workspaces
+      console.log("Fetching workspaces...");
       const workspacesResponse = await fetch('https://app.asana.com/api/1.0/workspaces', {
         headers: {
           'Authorization': `Bearer ${ASANA_TOKEN}`,
@@ -46,6 +48,7 @@ export const useAsanaSync = () => {
       }
       
       const workspacesData = await workspacesResponse.json();
+      console.log("Workspaces data:", workspacesData);
       const workspaces: AsanaWorkspace[] = workspacesData.data;
       
       if (workspaces.length === 0) {
@@ -60,8 +63,10 @@ export const useAsanaSync = () => {
       
       // Use the first workspace
       const primaryWorkspace = workspaces[0];
+      console.log("Using workspace:", primaryWorkspace.name);
       
       // Fetch projects in the workspace
+      console.log("Fetching projects for workspace:", primaryWorkspace.gid);
       const projectsResponse = await fetch(`https://app.asana.com/api/1.0/workspaces/${primaryWorkspace.gid}/projects`, {
         headers: {
           'Authorization': `Bearer ${ASANA_TOKEN}`,
@@ -74,7 +79,18 @@ export const useAsanaSync = () => {
       }
       
       const projectsData = await projectsResponse.json();
+      console.log("Projects data:", projectsData);
       const asanaProjects: AsanaProject[] = projectsData.data;
+      
+      if (asanaProjects.length === 0) {
+        toast({
+          title: "No Projects Found",
+          description: "No projects were found in your Asana workspace.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
       
       // Transform Asana projects to our app's format
       const projects: Project[] = asanaProjects.map(project => ({
@@ -86,7 +102,10 @@ export const useAsanaSync = () => {
       // Fetch tasks for each project
       const allTasks: Task[] = [];
       
+      console.log("Fetching tasks for", asanaProjects.length, "projects...");
+      
       for (const project of asanaProjects) {
+        console.log("Fetching tasks for project:", project.name);
         const tasksResponse = await fetch(`https://app.asana.com/api/1.0/projects/${project.gid}/tasks`, {
           headers: {
             'Authorization': `Bearer ${ASANA_TOKEN}`,
@@ -100,11 +119,13 @@ export const useAsanaSync = () => {
         }
         
         const tasksData = await tasksResponse.json();
+        console.log(`Tasks data for project ${project.name}:`, tasksData);
         const projectTasks: AsanaTask[] = tasksData.data;
         
         // Get full task details for each task
         for (const task of projectTasks) {
           try {
+            console.log("Fetching details for task:", task.gid);
             const taskDetailResponse = await fetch(`https://app.asana.com/api/1.0/tasks/${task.gid}`, {
               headers: {
                 'Authorization': `Bearer ${ASANA_TOKEN}`,
@@ -124,12 +145,17 @@ export const useAsanaSync = () => {
                 timeEstimate: 30, // Default time estimate
                 // Only adding fields that exist in the Task type
               });
+              console.log("Added task:", taskData.name);
+            } else {
+              console.error(`Error fetching details for task ${task.gid}: Status ${taskDetailResponse.status}`);
             }
           } catch (error) {
             console.error(`Error fetching details for task ${task.gid}:`, error);
           }
         }
       }
+      
+      console.log("Sync completed. Fetched", allTasks.length, "tasks from", projects.length, "projects");
       
       // Return the fetched data
       return {

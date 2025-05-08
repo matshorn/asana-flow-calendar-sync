@@ -26,15 +26,45 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Function to handle Asana sync and update local data
   const handleAsanaSync = async () => {
+    toast({
+      title: "Syncing with Asana",
+      description: "Please wait while we fetch your data from Asana...",
+    });
+    
     const data = await syncWithAsana();
     
     if (data) {
+      if (data.projects.length === 0) {
+        toast({
+          title: "No Projects Found",
+          description: "No projects were found in your Asana workspace.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (data.tasks.length === 0) {
+        toast({
+          title: "No Tasks Found",
+          description: "No tasks were found in your Asana projects.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Update tasks and projects with data from Asana
       setTasks(data.tasks);
       setProjects(data.projects);
+      
       toast({
         title: "Sync Successful",
         description: `Imported ${data.tasks.length} tasks from ${data.projects.length} projects.`,
+      });
+    } else {
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync with Asana. Please check the console for details.",
+        variant: "destructive",
       });
     }
   };
