@@ -27,9 +27,6 @@ interface AsanaTask {
 // Hardcoded Asana token - this is a publishable key used for API access
 const ASANA_TOKEN = "2/708730772520/1210120911116555:51c156887a0bebcf8c101daac7f13496";
 
-// The error response indicates the workspace ID is not recognized, so let's try to fetch available workspaces first
-// instead of hardcoding a specific one that might be invalid
-
 export const useAsanaSync = () => {
   const [loading, setLoading] = useState<boolean>(false);
   
@@ -68,13 +65,14 @@ export const useAsanaSync = () => {
         return null;
       }
       
-      // Use the first workspace
-      const primaryWorkspace = workspaces[0];
-      console.log(`Using workspace: ${primaryWorkspace.name} (${primaryWorkspace.gid})`);
+      // Use the third workspace if available, otherwise use the first
+      const selectedWorkspaceIndex = workspaces.length >= 3 ? 2 : 0; // Index 2 is the third workspace
+      const selectedWorkspace = workspaces[selectedWorkspaceIndex];
+      console.log(`Using workspace: ${selectedWorkspace.name} (${selectedWorkspace.gid}) - Workspace index: ${selectedWorkspaceIndex}`);
       
       // Fetch projects in the workspace
-      console.log(`Fetching projects for workspace: ${primaryWorkspace.gid}`);
-      const projectsResponse = await fetch(`https://app.asana.com/api/1.0/workspaces/${primaryWorkspace.gid}/projects`, {
+      console.log(`Fetching projects for workspace: ${selectedWorkspace.gid}`);
+      const projectsResponse = await fetch(`https://app.asana.com/api/1.0/workspaces/${selectedWorkspace.gid}/projects`, {
         headers: {
           'Authorization': `Bearer ${ASANA_TOKEN}`,
           'Accept': 'application/json'

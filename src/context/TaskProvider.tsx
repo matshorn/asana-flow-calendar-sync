@@ -28,7 +28,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleAsanaSync = async () => {
     toast({
       title: "Syncing with Asana",
-      description: "Please wait while we fetch your data from Asana...",
+      description: "Please wait while we fetch your data from Asana (using the third workspace if available)...",
     });
     
     console.log("Starting Asana sync process...");
