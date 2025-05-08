@@ -112,9 +112,9 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
           </span>
         )}
         <div className="flex items-center gap-1">
-          {/* Remove task button */}
+          {/* Remove task button - Made always visible */}
           <div 
-            className="task-action-button cursor-pointer opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
+            className="task-action-button cursor-pointer hover:text-red-500 transition-opacity"
             onClick={onRemoveTask}
             title="Remove from calendar"
           >
