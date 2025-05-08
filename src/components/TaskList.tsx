@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import TaskCard from '@/components/TaskCard';
@@ -89,7 +88,7 @@ const TaskList: React.FC = () => {
                   <div className="grid gap-2">
                     <Label htmlFor="task-project">Project</Label>
                     <Select value={newTaskProject} onValueChange={setNewTaskProject}>
-                      <SelectTrigger id="task-project">
+                      <SelectTrigger id="task-project" className="bg-background">
                         <SelectValue placeholder="Select a project" />
                       </SelectTrigger>
                       <SelectContent>
@@ -113,7 +112,7 @@ const TaskList: React.FC = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" onClick={handleAddTask}>Add Task</Button>
+                  <Button type="submit" onClick={handleAddTask} variant="secondary">Add Task</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

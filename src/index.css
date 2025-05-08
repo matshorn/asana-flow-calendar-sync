@@ -110,3 +110,12 @@
 .dark .select-item:focus {
   @apply bg-gray-700 text-gray-100;
 }
+
+/* Ensure buttons in dark mode have proper contrast */
+.dark button.bg-secondary {
+  @apply bg-gray-800 hover:bg-gray-700 text-gray-200;
+}
+
+.dark .select-trigger {
+  @apply bg-gray-800 text-gray-200 border-gray-700;
+}
