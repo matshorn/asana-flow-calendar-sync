@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import TaskCard from '@/components/TaskCard';
@@ -67,7 +68,7 @@ const TaskList: React.FC = () => {
           <div className="flex gap-2">
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="secondary" size="sm">
                   <Plus className="mr-1 h-4 w-4" /> Add Task
                 </Button>
               </DialogTrigger>
@@ -118,7 +119,7 @@ const TaskList: React.FC = () => {
             </Dialog>
             
             <Button 
-              variant="outline" 
+              variant="secondary" 
               size="sm" 
               onClick={() => syncWithAsana()}
               disabled={loading}
@@ -136,7 +137,7 @@ const TaskList: React.FC = () => {
               setSelectedProjectId(value === 'all' ? null : value);
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-secondary text-secondary-foreground">
               <SelectValue placeholder="Filter by project" />
             </SelectTrigger>
             <SelectContent>

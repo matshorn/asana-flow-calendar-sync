@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -98,4 +99,14 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Dark mode select and dropdown overrides */
+.dark .popover-content,
+.dark .select-content {
+  @apply bg-secondary text-secondary-foreground border-gray-700;
+}
+
+.dark .select-item:focus {
+  @apply bg-gray-700 text-gray-100;
 }

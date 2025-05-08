@@ -45,7 +45,7 @@ const ProjectColorMenu: React.FC = () => {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="secondary" size="sm" className="gap-2">
           <Paintbrush className="h-4 w-4" />
           <span>Project Colors</span>
         </Button>
@@ -108,6 +108,7 @@ const ProjectColorMenu: React.FC = () => {
                   <Button 
                     onClick={() => updateProjectColor(selectedProject, customColor)}
                     size="sm"
+                    variant="secondary"
                   >
                     Apply
                   </Button>
