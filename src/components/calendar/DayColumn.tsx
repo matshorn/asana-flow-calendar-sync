@@ -53,11 +53,11 @@ const DayColumn: React.FC<DayColumnProps> = ({
   handleTaskNameKeyDown
 }) => {
   return (
-    <div className="flex-1 flex flex-col min-w-[150px] relative">
+    <div className="flex-1 flex flex-col min-w-[150px] relative border-r border-gray-700">
       {/* Day header */}
-      <div className="h-12 border-b p-2 bg-gray-50 sticky top-0">
-        <div className="font-medium">{format(day, 'EEE')}</div>
-        <div className="text-xs text-gray-500">{format(day, 'MMM d')}</div>
+      <div className="h-12 border-b border-gray-700 p-2 bg-gray-800 sticky top-0">
+        <div className="font-medium text-gray-200">{format(day, 'EEE')}</div>
+        <div className="text-xs text-gray-400">{format(day, 'MMM d')}</div>
       </div>
       
       {/* Current time line */}
@@ -71,8 +71,10 @@ const DayColumn: React.FC<DayColumnProps> = ({
         return (
           <div 
             key={`slot-${timeIndex}`} 
-            className={`h-6 border-r ${time.endsWith(':00') ? 'border-b' : 'border-b border-gray-100'} ${
-              !task && !isContinuation ? 'hover:bg-gray-50' : ''
+            className={`h-6 border-r border-gray-700 ${
+              time.endsWith(':00') ? 'border-b border-gray-700' : 'border-b border-gray-800'
+            } ${
+              !task && !isContinuation ? 'hover:bg-gray-800' : ''
             }`}
             onDragOver={(e) => {
               if (!task && !isContinuation) {

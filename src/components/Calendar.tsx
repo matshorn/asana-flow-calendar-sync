@@ -35,8 +35,8 @@ const Calendar: React.FC = () => {
   } = useCalendar();
 
   return (
-    <div className="h-full flex flex-col" ref={calendarRef}>
-      <div className="p-4 border-b">
+    <div className="h-full flex flex-col bg-gray-900 text-gray-200" ref={calendarRef}>
+      <div className="p-4 border-b border-gray-700">
         <h2 className="text-lg font-semibold">Schedule</h2>
       </div>
       <div className="flex-1 overflow-auto">

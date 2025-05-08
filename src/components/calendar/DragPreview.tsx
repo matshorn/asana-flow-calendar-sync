@@ -36,7 +36,7 @@ const DragPreview: React.FC<DragPreviewProps> = ({
         position: 'fixed',
         left: `${dragPosition.left}px`,
         top: `${dragPosition.top}px`,
-        backgroundColor: 'rgba(121, 110, 255, 0.2)',
+        backgroundColor: 'rgba(121, 110, 255, 0.3)',
         borderLeft: '3px solid',
         borderLeftColor: projectColor,
         height: originalTaskData ? 
@@ -46,6 +46,7 @@ const DragPreview: React.FC<DragPreviewProps> = ({
         width: '200px', // Fixed width
         maxWidth: '200px',
         overflow: 'hidden', // Prevent text overflow
+        color: '#ffffff'
       }}
     >
       <div className="p-1 text-sm truncate">

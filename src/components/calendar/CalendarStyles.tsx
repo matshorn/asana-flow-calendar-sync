@@ -24,8 +24,9 @@ const CalendarStyles: React.FC = () => {
         pointer-events: none !important;
         z-index: 9999 !important;
         width: calc(100% / 3 - 20px) !important;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5) !important;
         transform: rotate(2deg) !important;
+        background-color: rgba(30, 30, 30, 0.7) !important;
       }
       
       /* Prevent task buttons from triggering the drag */

@@ -14,12 +14,12 @@ const CurrentTimeLine: React.FC<CurrentTimeLineProps> = ({ day, position }) => {
 
   return (
     <div 
-      className="absolute left-0 right-0 border-t border-red-500 z-10 pointer-events-none"
+      className="absolute left-0 right-0 border-t border-red-400 z-10 pointer-events-none"
       style={{ 
         top: `${position + 48}px`, // 48px offset for the header height
       }}
     >
-      <div className="absolute -left-1 -top-2 h-4 w-4 rounded-full bg-red-500" />
+      <div className="absolute -left-1 -top-2 h-4 w-4 rounded-full bg-red-400" />
     </div>
   );
 };

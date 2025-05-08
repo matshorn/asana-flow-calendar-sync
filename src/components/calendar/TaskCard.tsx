@@ -64,11 +64,12 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
         task.id === draggingTask ? 'opacity-50' : ''
       } ${!task.completed ? 'cursor-grab active:cursor-grabbing' : ''}`}
       style={{ 
-        backgroundColor: task.completed ? `${projectColor}05` : `${projectColor}15`,
+        backgroundColor: task.completed ? `${projectColor}15` : `${projectColor}25`,
         borderLeft: `3px solid ${task.completed ? '#a8a8a8' : projectColor}`,
         height: `${duration * 24}px`, // Convert slots to pixels (24px per slot)
         textDecoration: task.completed ? 'line-through' : 'none',
-        opacity: task.completed ? 0.7 : 1,
+        opacity: task.completed ? 0.6 : 1,
+        color: '#ffffff',
         ...(previewChange && previewChange.taskId === task.id ? {
           height: `${previewChange.height}px`,
           transform: previewChange.transform
@@ -79,7 +80,7 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
       {/* Top resize handle */}
       {!task.completed && (
         <div 
-          className="resize-handle absolute top-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
+          className="resize-handle absolute top-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-600 opacity-0 group-hover:opacity-80 flex items-center justify-center"
           onMouseDown={(e) => onResizeStart(e, 'top')}
         >
           <StretchVertical className="h-2 w-3" />
@@ -94,13 +95,13 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
             onChange={onTaskNameChange}
             onBlur={onSaveTaskName}
             onKeyDown={onTaskNameKeyDown}
-            className="h-5 text-[10px] p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="h-5 text-[10px] p-0 border-none bg-gray-700 text-white focus-visible:ring-0 focus-visible:ring-offset-0"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
           <span 
-            className={task.completed ? 'text-gray-500' : ''}
+            className={task.completed ? 'text-gray-400' : 'text-gray-100'}
             onDoubleClick={(e) => {
               e.stopPropagation();
               if (!task.completed) {
@@ -114,11 +115,11 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
         <div className="flex items-center gap-1">
           {/* Remove task button - Made always visible */}
           <div 
-            className="task-action-button cursor-pointer hover:text-red-500 transition-opacity"
+            className="task-action-button cursor-pointer hover:text-red-400 transition-opacity"
             onClick={onRemoveTask}
             title="Remove from calendar"
           >
-            <Trash size={14} className="text-gray-400 hover:text-red-500" />
+            <Trash size={14} className="text-gray-400 hover:text-red-400" />
           </div>
           {/* Complete task button */}
           <div 
@@ -137,7 +138,7 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
       
       {/* Show duration for non-short tasks */}
       {!isShortTask(task) && duration > 1 && (
-        <div className="text-gray-500 mt-0.5 text-[10px]">
+        <div className="text-gray-300 mt-0.5 text-[10px]">
           {Math.floor(task.timeEstimate! / 60) > 0 && `${Math.floor(task.timeEstimate! / 60)}h `}
           {task.timeEstimate! % 60 > 0 && `${task.timeEstimate! % 60}m`}
         </div>
@@ -146,7 +147,7 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
       {/* Bottom resize handle */}
       {!task.completed && (
         <div 
-          className="resize-handle absolute bottom-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-300 opacity-0 group-hover:opacity-80 flex items-center justify-center"
+          className="resize-handle absolute bottom-0 left-0 w-full h-3 cursor-ns-resize bg-transparent hover:bg-gray-600 opacity-0 group-hover:opacity-80 flex items-center justify-center"
           onMouseDown={(e) => onResizeStart(e, 'bottom')}
         >
           <StretchVertical className="h-2 w-3" />
