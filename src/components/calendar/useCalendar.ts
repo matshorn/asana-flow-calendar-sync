@@ -149,6 +149,10 @@ export const useCalendar = () => {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, day: Date, time: string) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
+    console.log('Dropped task ID:', taskId);
+    console.log('Drop target day:', format(day, 'yyyy-MM-dd'));
+    console.log('Drop target time:', time);
+    
     if (taskId) {
       scheduleTask(taskId, day, time);
     }
@@ -356,16 +360,14 @@ export const useCalendar = () => {
     const columnWidth = availableWidth / days.length;
     
     // Determine which day column the drop occurred in
-    // We use the shadow's position, not the mouse position
     const dayIndex = Math.min(
       days.length - 1,
-      Math.max(0, Math.floor((dragPosition.left + dragOffset.x - calendarRect.left - timeColumnWidth) / columnWidth))
+      Math.max(0, Math.floor((e.clientX - calendarRect.left - timeColumnWidth) / columnWidth))
     );
     const targetDay = days[dayIndex];
     
     // Calculate time slot based on the shadow's top position
-    // This is crucial: we use the shadow's position, not the mouse position
-    const relativeY = dragPosition.top - calendarRect.top - dayHeaderHeight;
+    const relativeY = e.clientY - calendarRect.top - dayHeaderHeight;
     
     // Find which time slot this corresponds to
     const slotIndex = Math.min(

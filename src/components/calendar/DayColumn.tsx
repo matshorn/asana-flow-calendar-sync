@@ -74,8 +74,16 @@ const DayColumn: React.FC<DayColumnProps> = ({
             className={`h-6 border-r ${time.endsWith(':00') ? 'border-b' : 'border-b border-gray-100'} ${
               !task && !isContinuation ? 'hover:bg-gray-50' : ''
             }`}
-            onDragOver={!task && !isContinuation ? allowDrop : undefined}
-            onDrop={!task && !isContinuation ? (e) => handleDrop(e, day, time) : undefined}
+            onDragOver={(e) => {
+              if (!task && !isContinuation) {
+                allowDrop(e);
+              }
+            }}
+            onDrop={(e) => {
+              if (!task && !isContinuation) {
+                handleDrop(e, day, time);
+              }
+            }}
           >
             {task && !isContinuation && (
               <CalendarTaskCard

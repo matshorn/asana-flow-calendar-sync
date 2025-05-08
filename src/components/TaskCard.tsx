@@ -53,6 +53,33 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
 
   // Get project color with fallback
   const projectColor = project?.color || '#796eff';
+  
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    // Set the data being dragged - this is crucial for the drop handler to work
+    e.dataTransfer.setData('taskId', task.id);
+    e.dataTransfer.effectAllowed = 'move';
+    setIsDragging(true);
+    
+    console.log('Drag started with task ID:', task.id);
+    
+    // Create a ghost image that matches the card appearance
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+    dragImage.style.position = 'absolute';
+    dragImage.style.top = '-1000px';
+    dragImage.style.opacity = '0.5';
+    document.body.appendChild(dragImage);
+    
+    e.dataTransfer.setDragImage(
+      dragImage,
+      e.clientX - e.currentTarget.getBoundingClientRect().left,
+      e.clientY - e.currentTarget.getBoundingClientRect().top
+    );
+    
+    // Clean up the ghost image after a delay
+    setTimeout(() => {
+      document.body.removeChild(dragImage);
+    }, 100);
+  };
 
   return (
     <Card 
@@ -63,32 +90,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
         borderLeftColor: projectColor,
         backgroundColor: `${projectColor}10` // Very light tint of the project color
       }}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('taskId', task.id);
-        setIsDragging(true);
-        
-        // Create a ghost image that matches the card appearance
-        const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
-        dragImage.style.position = 'absolute';
-        dragImage.style.top = '-1000px';
-        dragImage.style.opacity = '0.5';
-        document.body.appendChild(dragImage);
-        
-        e.dataTransfer.setDragImage(
-          dragImage,
-          e.clientX - e.currentTarget.getBoundingClientRect().left,
-          e.clientY - e.currentTarget.getBoundingClientRect().top
-        );
-        
-        // Clean up the ghost image after a delay
-        setTimeout(() => {
-          document.body.removeChild(dragImage);
-        }, 100);
-      }}
-      onDragEnd={() => {
-        setIsDragging(false);
-      }}
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={() => setIsDragging(false)}
     >
       <div className="flex items-center gap-2">
         <div 
