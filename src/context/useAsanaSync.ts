@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Task, Project } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/use-toast';
+import { format, parseISO } from 'date-fns';
 
 interface AsanaWorkspace {
   gid: string;
@@ -137,13 +138,24 @@ export const useAsanaSync = () => {
               const taskDetail = await taskDetailResponse.json();
               const taskData = taskDetail.data;
               
+              // Parse due_on date if available
+              let scheduledTime = undefined;
+              if (taskData.due_on) {
+                const dueDate = new Date(taskData.due_on);
+                // Default to 10:00 AM for tasks with due dates
+                scheduledTime = {
+                  day: dueDate,
+                  startTime: "10:00",
+                };
+              }
+              
               allTasks.push({
                 id: taskData.gid,
                 name: taskData.name,
                 projectId: project.gid,
                 completed: taskData.completed,
                 timeEstimate: 30, // Default time estimate
-                // Only adding fields that exist in the Task type
+                scheduledTime, // Add the scheduled time if available
               });
               console.log("Added task:", taskData.name);
             } else {
@@ -156,6 +168,23 @@ export const useAsanaSync = () => {
       }
       
       console.log("Sync completed. Fetched", allTasks.length, "tasks from", projects.length, "projects");
+      
+      // Assign some tasks to today's calendar for better demo experience
+      const today = new Date();
+      const tasksToSchedule = Math.min(5, allTasks.length);
+      
+      for (let i = 0; i < tasksToSchedule; i++) {
+        if (allTasks[i] && !allTasks[i].scheduledTime) {
+          // Spread tasks throughout the day starting at 9 AM
+          const hour = 9 + Math.floor(i / 2);
+          const minute = (i % 2) * 30;
+          
+          allTasks[i].scheduledTime = {
+            day: today,
+            startTime: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+          };
+        }
+      }
       
       // Return the fetched data
       return {

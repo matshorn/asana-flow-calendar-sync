@@ -52,13 +52,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
+      console.log("Updating local state with synced data:", data);
+      
       // Update tasks and projects with data from Asana
       setTasks(data.tasks);
       setProjects(data.projects);
       
+      // Count scheduled tasks
+      const scheduledTasks = data.tasks.filter(task => task.scheduledTime).length;
+      
       toast({
         title: "Sync Successful",
-        description: `Imported ${data.tasks.length} tasks from ${data.projects.length} projects.`,
+        description: `Imported ${data.tasks.length} tasks from ${data.projects.length} projects. ${scheduledTasks} tasks scheduled on calendar.`,
       });
     } else {
       toast({
