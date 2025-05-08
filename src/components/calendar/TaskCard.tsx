@@ -4,6 +4,7 @@ import { Task } from '@/types';
 import { Card } from '@/components/ui/card';
 import { StretchVertical, CheckCircle, Circle, Trash } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useTaskContext } from '@/context/TaskContext';
 
 interface TaskCardProps {
   task: Task;
@@ -42,6 +43,15 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
   onSaveTaskName,
   onTaskNameKeyDown
 }) => {
+  // Get projects to find task's project color
+  const { projects } = useTaskContext();
+  
+  // Find the project for this task
+  const project = projects.find(p => p.id === task.projectId);
+  
+  // Get project color with fallback
+  const projectColor = project?.color || '#796eff';
+  
   // Check if a task is short (15 minutes or less)
   const isShortTask = (task: Task): boolean => {
     return task.timeEstimate !== undefined && task.timeEstimate < 20;
@@ -54,8 +64,8 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
         task.id === draggingTask ? 'opacity-50' : ''
       } ${!task.completed ? 'cursor-grab active:cursor-grabbing' : ''}`}
       style={{ 
-        backgroundColor: task.completed ? 'rgba(121, 110, 255, 0.05)' : 'rgba(121, 110, 255, 0.1)',
-        borderLeft: `3px solid ${task.completed ? '#a8a8a8' : (task.timeEstimate ? '#796eff' : '#fd7e42')}`,
+        backgroundColor: task.completed ? `${projectColor}05` : `${projectColor}15`,
+        borderLeft: `3px solid ${task.completed ? '#a8a8a8' : projectColor}`,
         height: `${duration * 24}px`, // Convert slots to pixels (24px per slot)
         textDecoration: task.completed ? 'line-through' : 'none',
         opacity: task.completed ? 0.7 : 1,
@@ -119,7 +129,7 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
             {task.completed ? (
               <CheckCircle size={14} className="text-gray-400" />
             ) : (
-              <Circle size={14} className="text-gray-400 hover:text-gray-600" />
+              <Circle size={14} style={{ color: projectColor }} />
             )}
           </div>
         </div>

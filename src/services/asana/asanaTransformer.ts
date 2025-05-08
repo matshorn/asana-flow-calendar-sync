@@ -3,15 +3,38 @@ import { Task, Project } from '@/types';
 import { AsanaProject, AsanaTask } from './asanaApi';
 
 /**
- * Transforms Asana projects to our app's project format
+ * Project color palette
+ */
+const PROJECT_COLORS = [
+  '#796eff', // Asana Purple
+  '#25e8c8', // Teal
+  '#fd7e42', // Orange
+  '#ff5263', // Red
+  '#9ee7e3', // Light Teal
+  '#ffd500', // Yellow
+  '#4186e0', // Blue
+  '#a4cf30', // Green
+  '#aa62e3', // Violet
+  '#ff9a40', // Light Orange
+];
+
+/**
+ * Transforms Asana projects to our app's project format with consistent colors
  */
 export const transformProjects = (asanaProjects: AsanaProject[]): Project[] => {
   console.log("Transforming projects:", asanaProjects.length);
-  return asanaProjects.map(project => ({
-    id: project.gid,
-    name: project.name,
-    color: project.color || "#796eff" // Use default color if not provided
-  }));
+  
+  return asanaProjects.map((project, index) => {
+    // Use project's own color if provided, otherwise assign from our palette
+    const colorIndex = index % PROJECT_COLORS.length;
+    const color = project.color || PROJECT_COLORS[colorIndex];
+    
+    return {
+      id: project.gid,
+      name: project.name,
+      color: color
+    };
+  });
 };
 
 /**
@@ -53,17 +76,20 @@ export const transformTask = (taskData: AsanaTask, projectId: string): Task | nu
  * Assigns some tasks to today's calendar for better demo experience
  */
 export const assignTasksToToday = (tasks: Task[]): Task[] => {
-  if (tasks.length === 0) {
-    console.log("No tasks to schedule for today");
+  // Filter out completed tasks first
+  const activeTasks = tasks.filter(task => !task.completed);
+  
+  if (activeTasks.length === 0) {
+    console.log("No active tasks to schedule for today");
     return [];
   }
   
-  console.log(`Scheduling ${Math.min(5, tasks.length)} tasks for today out of ${tasks.length} total tasks`);
+  console.log(`Scheduling ${Math.min(5, activeTasks.length)} tasks for today out of ${activeTasks.length} total active tasks`);
   
   const today = new Date();
-  const tasksToSchedule = Math.min(5, tasks.length);
+  const tasksToSchedule = Math.min(5, activeTasks.length);
   
-  const updatedTasks = [...tasks];
+  const updatedTasks = [...activeTasks];
   
   for (let i = 0; i < tasksToSchedule; i++) {
     if (updatedTasks[i] && !updatedTasks[i].scheduledTime) {

@@ -1,11 +1,13 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Task } from '@/types';
 import { format, addDays, isToday } from 'date-fns';
 import { useTaskContext } from '@/context/TaskContext';
 
 export const useCalendar = () => {
-  const { tasks, scheduleTask, updateTaskTimeEstimate, markTaskComplete, removeTaskFromCalendar, updateTaskName } = useTaskContext();
+  const { tasks: allTasks, scheduleTask, updateTaskTimeEstimate, markTaskComplete, removeTaskFromCalendar, updateTaskName } = useTaskContext();
+  
+  // Filter out completed tasks
+  const tasks = allTasks.filter(task => !task.completed);
   
   const today = new Date();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());

@@ -51,15 +51,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
     }
   };
 
-  // Styling based on the project and completion state
-  const borderColor = project?.color || '#796eff';
+  // Get project color with fallback
+  const projectColor = project?.color || '#796eff';
 
   return (
     <Card 
       className={`mb-2 p-3 border-l-4 cursor-move group hover:shadow-md transition-shadow ${
-        task.completed ? 'opacity-70' : ''
-      } ${isDragging ? 'opacity-50' : ''}`}
-      style={{ borderLeftColor: task.completed ? '#a8a8a8' : borderColor }}
+        isDragging ? 'opacity-50' : ''
+      }`}
+      style={{ 
+        borderLeftColor: projectColor,
+        backgroundColor: `${projectColor}10` // Very light tint of the project color
+      }}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('taskId', task.id);
@@ -91,14 +94,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
         <div 
           className="text-gray-400 hover:text-gray-600 cursor-pointer"
           onClick={() => markTaskComplete(task.id)}
+          style={{ color: projectColor }}
         >
-          {task.completed ? (
-            <CheckCircle size={18} />
-          ) : (
-            <Circle size={18} />
-          )}
+          <Circle size={18} />
         </div>
-        <div className="flex-1" onDoubleClick={() => !task.completed && setIsEditing(true)}>
+        <div className="flex-1" onDoubleClick={() => setIsEditing(true)}>
           {isEditing ? (
             <Input
               type="text"
@@ -110,7 +110,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, project }) => {
               autoFocus
             />
           ) : (
-            <div className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>
+            <div className="font-medium">
               {task.name}
             </div>
           )}

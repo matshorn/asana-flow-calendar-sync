@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import TaskCard from '@/components/TaskCard';
@@ -11,8 +10,7 @@ import { Label } from '@/components/ui/label';
 
 const TaskList: React.FC = () => {
   const { 
-    filteredTasks, 
-    tasks,
+    tasks, 
     projects, 
     selectedProjectId, 
     setSelectedProjectId,
@@ -26,20 +24,18 @@ const TaskList: React.FC = () => {
   const [newTaskEstimate, setNewTaskEstimate] = React.useState('');
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  // Debug logging
-  useEffect(() => {
-    console.log("TaskList rendered");
-    console.log("All tasks:", tasks);
-    console.log("Filtered tasks:", filteredTasks);
-    console.log("Selected project ID:", selectedProjectId);
-    console.log("Projects:", projects);
-  }, [tasks, filteredTasks, selectedProjectId, projects]);
+  // Filter out completed tasks
+  const activeTasks = tasks.filter(task => !task.completed);
+  
+  // Filter tasks by selected project
+  const filteredTasks = selectedProjectId 
+    ? activeTasks.filter(task => task.projectId === selectedProjectId)
+    : activeTasks;
 
   // Group tasks by project
   const tasksByProject: Record<string, typeof filteredTasks> = {};
   
   filteredTasks.forEach(task => {
-    console.log("Processing task for display:", task);
     if (!tasksByProject[task.projectId]) {
       tasksByProject[task.projectId] = [];
     }
@@ -124,10 +120,7 @@ const TaskList: React.FC = () => {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => {
-                console.log("Sync button clicked");
-                syncWithAsana();
-              }}
+              onClick={() => syncWithAsana()}
               disabled={loading}
             >
               <RefreshCcw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -140,7 +133,6 @@ const TaskList: React.FC = () => {
           <Select 
             value={selectedProjectId || 'all'} 
             onValueChange={(value) => {
-              console.log("Project filter changed to:", value);
               setSelectedProjectId(value === 'all' ? null : value);
             }}
           >
@@ -160,12 +152,6 @@ const TaskList: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-auto p-4">
-        <div className="mb-3 p-2 bg-slate-100 rounded">
-          <p className="text-sm font-medium text-slate-700">Debug Info:</p>
-          <p className="text-xs text-slate-500">Total Tasks: {tasks.length}</p>
-          <p className="text-xs text-slate-500">Filtered Tasks: {filteredTasks.length}</p>
-          <p className="text-xs text-slate-500">Projects: {projects.length}</p>
-        </div>
         {selectedProjectId ? (
           // If a project is selected, show only those tasks
           <div>
