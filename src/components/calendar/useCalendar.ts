@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Task } from '@/types';
 import { format, addDays, isToday } from 'date-fns';
@@ -163,7 +162,7 @@ export const useCalendar = () => {
     e.preventDefault();
   };
   
-  // Start resizing an event
+  // Handle resizing functions
   const handleResizeStart = (
     e: React.MouseEvent,
     taskId: string,
@@ -196,7 +195,6 @@ export const useCalendar = () => {
     document.addEventListener('mouseup', handleResizeEnd);
   };
   
-  // Handle mouse movement during resize
   const handleResizeMove = (e: MouseEvent) => {
     if (!resizing) return;
     
@@ -228,7 +226,6 @@ export const useCalendar = () => {
     }
   };
   
-  // End resizing and apply changes
   const handleResizeEnd = (e: MouseEvent) => {
     if (!resizing || !previewChange) {
       cleanupResizeHandlers();
@@ -359,15 +356,20 @@ export const useCalendar = () => {
     const availableWidth = calendarRect.width - timeColumnWidth;
     const columnWidth = availableWidth / days.length;
     
+    // Important: Use the position of the drag preview, not the mouse position
+    // Calculate where the top-left corner of the task preview is relative to calendar
+    const previewLeft = dragPosition.left;
+    const previewTop = dragPosition.top;
+    
     // Determine which day column the drop occurred in
     const dayIndex = Math.min(
       days.length - 1,
-      Math.max(0, Math.floor((e.clientX - calendarRect.left - timeColumnWidth) / columnWidth))
+      Math.max(0, Math.floor((previewLeft + (dragOffset.x / 2) - calendarRect.left - timeColumnWidth) / columnWidth))
     );
     const targetDay = days[dayIndex];
     
-    // Calculate time slot based on the shadow's top position
-    const relativeY = e.clientY - calendarRect.top - dayHeaderHeight;
+    // Calculate time slot based on the preview's top position
+    const relativeY = previewTop - calendarRect.top - dayHeaderHeight;
     
     // Find which time slot this corresponds to
     const slotIndex = Math.min(
@@ -403,27 +405,25 @@ export const useCalendar = () => {
     setOriginalTaskData(null);
   };
 
-  // Handle marking task as complete
+  // Task action handlers
   const handleMarkComplete = (e: React.MouseEvent, taskId: string) => {
     e.preventDefault();
     e.stopPropagation();
     markTaskComplete(taskId);
   };
 
-  // Remove task from calendar
   const handleRemoveTask = (e: React.MouseEvent, taskId: string) => {
     e.preventDefault();
     e.stopPropagation();
     removeTaskFromCalendar(taskId);
   };
   
-  // Start editing task name
+  // Task name editing functions
   const handleEditTaskName = (taskId: string, currentName: string) => {
     setEditingTaskId(taskId);
     setEditingTaskName(currentName);
   };
   
-  // Save task name changes
   const handleSaveTaskName = () => {
     if (editingTaskId && editingTaskName.trim()) {
       updateTaskName(editingTaskId, editingTaskName.trim());
@@ -432,7 +432,6 @@ export const useCalendar = () => {
     }
   };
   
-  // Handle key events during task name editing
   const handleTaskNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSaveTaskName();
@@ -442,7 +441,6 @@ export const useCalendar = () => {
     }
   };
   
-  // Handle task name input change
   const handleTaskNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditingTaskName(e.target.value);
   };
