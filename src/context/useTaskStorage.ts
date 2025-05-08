@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Task, Project } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 // Custom hook to handle task storage
 export const useTaskStorage = () => {
@@ -28,6 +29,14 @@ export const useTaskStorage = () => {
     const storedProjects = localStorage.getItem('projects');
     if (storedProjects) {
       setProjects(JSON.parse(storedProjects));
+    } else {
+      // Add default projects if none exist
+      const defaultProjects: Project[] = [
+        { id: uuidv4(), name: "Work", color: "#796eff" },
+        { id: uuidv4(), name: "Personal", color: "#ff8c00" }
+      ];
+      setProjects(defaultProjects);
+      localStorage.setItem('projects', JSON.stringify(defaultProjects));
     }
   }, []);
 
