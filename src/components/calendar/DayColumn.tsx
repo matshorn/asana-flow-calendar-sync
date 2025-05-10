@@ -19,6 +19,7 @@ interface DayColumnProps {
   getTaskDuration: (task: Task) => number;
   handleDrop: (e: React.DragEvent<HTMLDivElement>, day: Date, time: string) => void;
   allowDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  handleMouseDown: (e: React.MouseEvent, taskId: string, day: Date, startTime: string) => void;
   handleResizeStart: (
     e: React.MouseEvent,
     taskId: string,
@@ -48,6 +49,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
   getTaskDuration,
   handleDrop,
   allowDrop,
+  handleMouseDown,
   handleResizeStart,
   handleRemoveTask,
   handleMarkComplete,
@@ -88,16 +90,12 @@ const DayColumn: React.FC<DayColumnProps> = ({
             {task && !isContinuation && (
               <CalendarTaskCard
                 task={task}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('taskId', task.id);
-                  e.dataTransfer.effectAllowed = 'move';
-                }}
                 duration={getTaskDuration(task)}
                 isEditing={editingTaskId === task.id}
                 editingTaskName={editingTaskName}
                 previewChange={previewChange}
                 draggingTask={draggingTask}
+                onMouseDown={(e) => handleMouseDown(e, task.id, day, time)}
                 onResizeStart={(e, edge) => {
                   const element = e.currentTarget.parentElement as HTMLDivElement;
                   handleResizeStart(e, task.id, getTaskDuration(task), edge, element);

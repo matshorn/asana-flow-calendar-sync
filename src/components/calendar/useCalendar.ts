@@ -18,6 +18,11 @@ export const useCalendar = () => {
   const today = new Date();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
+  // Dragging state
+  const [draggingTask, setDraggingTask] = useState<string | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ left: number; top: number } | null>(null);
+  const [originalTaskData, setOriginalTaskData] = useState<{ day: Date; startTime: string; rect: DOMRect } | null>(null);
+
   // Resizing state
   const [resizing, setResizing] = useState<{
     taskId: string;
@@ -97,6 +102,64 @@ export const useCalendar = () => {
     const slotsPerHour = 4;
     // Compute position in pixels from top of slots
     return (minutesSinceStart / 60) * slotHeight * slotsPerHour;
+  };
+
+  // Mouse event handlers for drag and drop within the calendar
+  const handleMouseDown = (e: React.MouseEvent, taskId: string, day: Date, startTime: string) => {
+    if (e.button !== 0) return; // Only left mouse button
+    e.preventDefault();
+
+    // Get element rect for positioning calculations
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    
+    setDraggingTask(taskId);
+    setDragPosition({ left: e.clientX, top: e.clientY });
+    setOriginalTaskData({ day, startTime, rect });
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!draggingTask) return;
+    
+    // Update drag position for the floating preview
+    setDragPosition({ left: e.clientX, top: e.clientY });
+  };
+
+  const handleMouseUp = (e: MouseEvent) => {
+    if (!draggingTask || !dragPosition || !originalTaskData || !calendarRef.current) return;
+    
+    // Clean up listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    
+    // Get calendar position
+    const calendarRect = calendarRef.current.getBoundingClientRect();
+    
+    // Calculate which day column was dropped into
+    const dayWidth = calendarRect.width / days.length;
+    const dayIndex = Math.min(
+      Math.max(Math.floor((e.clientX - calendarRect.left) / dayWidth), 0),
+      days.length - 1
+    );
+    const targetDay = days[dayIndex];
+    
+    // Calculate which time slot was dropped into
+    const slotHeight = 24; // Height of each 15-min slot
+    const timeIndex = Math.min(
+      Math.max(Math.floor((e.clientY - calendarRect.top) / slotHeight), 0),
+      timeSlots.length - 1
+    );
+    const targetTime = timeSlots[timeIndex];
+    
+    // Schedule the task to the new time
+    scheduleTask(draggingTask, targetDay, targetTime);
+    
+    // Reset drag state
+    setDraggingTask(null);
+    setDragPosition(null);
+    setOriginalTaskData(null);
   };
 
   // Unified HTML5 drag-and-drop handlers
@@ -210,6 +273,9 @@ export const useCalendar = () => {
     currentTime,
     calculateTimeLinePosition,
     tasks,
+    draggingTask,
+    dragPosition,
+    originalTaskData,
     resizing,
     previewChange,
     editingTaskId,
@@ -220,6 +286,7 @@ export const useCalendar = () => {
     isSlotContinuation,
     allowDrop,
     handleDrop,
+    handleMouseDown,
     handleResizeStart,
     handleMarkComplete,
     handleRemoveTask,
