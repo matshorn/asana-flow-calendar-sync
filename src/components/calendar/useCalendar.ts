@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Task } from '@/types';
 import { format, addDays } from 'date-fns';
@@ -56,6 +57,23 @@ export const useCalendar = () => {
       timeSlots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
     }
   }
+
+  // Calculate time line position for current time
+  const calculateTimeLinePosition = () => {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    
+    // If outside calendar hours (8AM - 6PM), return null
+    if (hour < 8 || hour >= 18) return null;
+    
+    // Calculate position based on time
+    const hourOffset = (hour - 8) * 4; // 4 slots per hour
+    const minuteOffset = Math.floor(minute / 15);
+    const position = (hourOffset + minuteOffset) * 24; // each slot is 24px tall
+    
+    return position;
+  };
 
   // Helpers
   const findTaskForSlot = (day: Date, time: string) => {
@@ -208,7 +226,7 @@ export const useCalendar = () => {
     handleEditTaskName,
     handleSaveTaskName,
     handleTaskNameKeyDown,
-    handleTaskNameChange
+    handleTaskNameChange,
+    calculateTimeLinePosition, // Added this line to export the function
   };
 };
-

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { Task } from '@/types';
@@ -86,6 +87,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
           >
             {task && !isContinuation && (
               <CalendarTaskCard
+                task={task}
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.setData('taskId', task.id);
@@ -102,7 +104,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
                 }}
                 onRemoveTask={(e) => handleRemoveTask(e, task.id)}
                 onMarkComplete={(e) => handleMarkComplete(e, task.id)}
-                onEditTaskName={() => handleTaskNameEdit(task.id, task.name)}
+                onEditTaskName={() => handleEditTaskName(task.id, task.name)}
                 onTaskNameChange={handleTaskNameChange}
                 onSaveTaskName={handleSaveTaskName}
                 onTaskNameKeyDown={handleTaskNameKeyDown}
