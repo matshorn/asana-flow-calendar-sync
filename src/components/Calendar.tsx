@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TimeColumn from './calendar/TimeColumn';
 import DayColumn from './calendar/DayColumn';
@@ -12,9 +11,9 @@ const Calendar: React.FC = () => {
     timeSlots,
     tasks,
     draggingTask,
+    dragOffset,
     dragPosition,
     originalTaskData,
-    previewChange,
     editingTaskId,
     editingTaskName,
     calendarRef,
@@ -24,14 +23,13 @@ const Calendar: React.FC = () => {
     isSlotContinuation,
     handleDrop,
     allowDrop,
-    handleMouseDown,
     handleResizeStart,
     handleMarkComplete,
     handleRemoveTask,
     handleEditTaskName,
+    handleTaskNameChange,
     handleSaveTaskName,
-    handleTaskNameKeyDown,
-    handleTaskNameChange
+    handleTaskNameKeyDown
   } = useCalendar();
 
   return (
@@ -53,7 +51,7 @@ const Calendar: React.FC = () => {
               currentTimePosition={calculateTimeLinePosition()}
               tasks={tasks}
               draggingTask={draggingTask}
-              previewChange={previewChange}
+              previewChange={null} // previewChange no longer used here
               editingTaskId={editingTaskId}
               editingTaskName={editingTaskName}
               findTaskForSlot={findTaskForSlot}
@@ -61,7 +59,6 @@ const Calendar: React.FC = () => {
               getTaskDuration={getTaskDuration}
               handleDrop={handleDrop}
               allowDrop={allowDrop}
-              handleMouseDown={handleMouseDown}
               handleResizeStart={handleResizeStart}
               handleRemoveTask={handleRemoveTask}
               handleMarkComplete={handleMarkComplete}
@@ -77,6 +74,7 @@ const Calendar: React.FC = () => {
       {/* Dragging preview */}
       <DragPreview 
         draggingTask={draggingTask}
+        dragOffset={dragOffset}
         dragPosition={dragPosition}
         originalTaskData={originalTaskData}
         tasks={tasks}
