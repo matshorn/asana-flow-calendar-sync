@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Task } from '@/types';
-import { format, addDays } from 'date-fns';
+import { addDays } from 'date-fns';
 import { useTaskContext } from '@/context/TaskContext';
 
 export const useCalendar = () => {
@@ -11,11 +10,11 @@ export const useCalendar = () => {
     updateTaskTimeEstimate,
     markTaskComplete,
     removeTaskFromCalendar,
-    updateTaskName
+    updateTaskName,
   } = useTaskContext();
 
   // Only active tasks
-  const tasks = allTasks.filter(task => !task.completed);
+  const tasks = allTasks.filter((task) => !task.completed);
   const today = new Date();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
@@ -47,46 +46,31 @@ export const useCalendar = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Prepare days
+  // Prepare days (today + next 2 days)
   const days = [today, addDays(today, 1), addDays(today, 2)];
 
-  // Time slots 08:00-18:00 at 15m intervals
+  // Time slots 08:00-18:00 at 15min intervals
   const timeSlots: string[] = [];
   for (let h = 8; h < 18; h++) {
     for (let m = 0; m < 60; m += 15) {
-      timeSlots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      timeSlots.push(
+        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      );
     }
   }
 
-  // Calculate time line position for current time
-  const calculateTimeLinePosition = () => {
-    const now = new Date();
-    const hour = now.getHours();
-    const minute = now.getMinutes();
-    
-    // If outside calendar hours (8AM - 6PM), return null
-    if (hour < 8 || hour >= 18) return null;
-    
-    // Calculate position based on time
-    const hourOffset = (hour - 8) * 4; // 4 slots per hour
-    const minuteOffset = Math.floor(minute / 15);
-    const position = (hourOffset + minuteOffset) * 24; // each slot is 24px tall
-    
-    return position;
-  };
-
   // Helpers
   const findTaskForSlot = (day: Date, time: string) => {
-    return tasks.find(task => task.scheduledTime?.day &&
-      new Date(task.scheduledTime.day).toDateString() === day.toDateString() &&
-      task.scheduledTime.startTime === time
+    return tasks.find(
+      (task) =>
+        task.scheduledTime?.day &&
+        new Date(task.scheduledTime.day).toDateString() === day.toDateString() &&
+        task.scheduledTime.startTime === time
     );
   };
 
   const getTaskDuration = (task: Task) => {
-    return task.timeEstimate
-      ? Math.ceil(task.timeEstimate / 15)
-      : 2;
+    return task.timeEstimate ? Math.ceil(task.timeEstimate / 15) : 2;
   };
 
   const isSlotContinuation = (day: Date, time: string, index: number) => {
@@ -97,6 +81,22 @@ export const useCalendar = () => {
       if (prevTask && i < getTaskDuration(prevTask)) return true;
     }
     return false;
+  };
+
+  // Calculate the vertical position (in px) of the current time line
+  const calculateTimeLinePosition = (): number | null => {
+    const currentHour = currentTime.getHours();
+    const currentMinute = currentTime.getMinutes();
+    // Show only within 08:00-18:00
+    if (currentHour < 8 || currentHour >= 18) {
+      return null;
+    }
+    const startHour = 8;
+    const minutesSinceStart = (currentHour - startHour) * 60 + currentMinute;
+    const slotHeight = 24; // px per 15-min slot
+    const slotsPerHour = 4;
+    // Compute position in pixels from top of slots
+    return (minutesSinceStart / 60) * slotHeight * slotsPerHour;
   };
 
   // Unified HTML5 drag-and-drop handlers
@@ -110,7 +110,6 @@ export const useCalendar = () => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
-    // Reschedule task
     scheduleTask(taskId, day, time);
   };
 
@@ -127,7 +126,6 @@ export const useCalendar = () => {
     const originalHeight = element.clientHeight;
     setResizing({ taskId, startY: e.clientY, startDuration: currentDuration, edge, originalHeight });
     setPreviewChange({ taskId, height: originalHeight, transform: 'translateY(0)' });
-
     document.addEventListener('mousemove', handleResizeMove);
     document.addEventListener('mouseup', handleResizeEnd);
   };
@@ -138,14 +136,16 @@ export const useCalendar = () => {
     const yDiff = e.clientY - resizing.startY;
     if (resizing.edge === 'bottom') {
       const newHeight = Math.max(24, resizing.originalHeight + yDiff);
-      setPreviewChange(prev => prev && { ...prev, height: newHeight });
+      setPreviewChange((prev) => prev && { ...prev, height: newHeight });
     } else {
       const newHeight = Math.max(24, resizing.originalHeight - yDiff);
-      setPreviewChange(prev => prev && ({
-        ...prev,
-        height: newHeight,
-        transform: `translateY(${yDiff}px)`
-      }));
+      setPreviewChange((prev) =>
+        prev && ({
+          ...prev,
+          height: newHeight,
+          transform: `translateY(${yDiff}px)`
+        })
+      );
     }
   };
 
@@ -158,7 +158,6 @@ export const useCalendar = () => {
     const slots = Math.round(previewChange.height / slotHeight);
     const newMinutes = slots * 15;
     updateTaskTimeEstimate(resizing.taskId, newMinutes);
-    // If top edge moved, calculate new startTime here if needed
     cleanupResize();
   };
 
@@ -209,6 +208,7 @@ export const useCalendar = () => {
     days,
     timeSlots,
     currentTime,
+    calculateTimeLinePosition,
     tasks,
     resizing,
     previewChange,
@@ -226,7 +226,6 @@ export const useCalendar = () => {
     handleEditTaskName,
     handleSaveTaskName,
     handleTaskNameKeyDown,
-    handleTaskNameChange,
-    calculateTimeLinePosition, // Added this line to export the function
+    handleTaskNameChange
   };
 };
