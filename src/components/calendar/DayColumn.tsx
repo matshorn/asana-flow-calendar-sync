@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { Task } from '@/types';
@@ -11,7 +10,7 @@ interface DayColumnProps {
   currentTimePosition: number | null;
   tasks: Task[];
   draggingTask: string | null;
-  previewChange: { taskId: string, height: number, transform: string } | null;
+  previewChange: { taskId: string; height: number; transform: string } | null;
   editingTaskId: string | null;
   editingTaskName: string;
   findTaskForSlot: (day: Date, time: string) => Task | undefined;
@@ -19,8 +18,13 @@ interface DayColumnProps {
   getTaskDuration: (task: Task) => number;
   handleDrop: (e: React.DragEvent<HTMLDivElement>, day: Date, time: string) => void;
   allowDrop: (e: React.DragEvent<HTMLDivElement>) => void;
-  handleMouseDown: (e: React.MouseEvent, taskId: string, day: Date, startTime: string) => void;
-  handleResizeStart: (e: React.MouseEvent, taskId: string, currentDuration: number, edge: 'top' | 'bottom', element: HTMLDivElement) => void;
+  handleResizeStart: (
+    e: React.MouseEvent,
+    taskId: string,
+    currentDuration: number,
+    edge: 'top' | 'bottom',
+    element: HTMLDivElement
+  ) => void;
   handleRemoveTask: (e: React.MouseEvent, taskId: string) => void;
   handleMarkComplete: (e: React.MouseEvent, taskId: string) => void;
   handleEditTaskName: (taskId: string, currentName: string) => void;
@@ -43,14 +47,13 @@ const DayColumn: React.FC<DayColumnProps> = ({
   getTaskDuration,
   handleDrop,
   allowDrop,
-  handleMouseDown,
   handleResizeStart,
   handleRemoveTask,
   handleMarkComplete,
   handleEditTaskName,
   handleTaskNameChange,
   handleSaveTaskName,
-  handleTaskNameKeyDown
+  handleTaskNameKeyDown,
 }) => {
   return (
     <div className="flex-1 flex flex-col min-w-[150px] relative border-r border-gray-700">
@@ -59,28 +62,22 @@ const DayColumn: React.FC<DayColumnProps> = ({
         <div className="font-medium text-gray-200">{format(day, 'EEE')}</div>
         <div className="text-xs text-gray-400">{format(day, 'MMM d')}</div>
       </div>
-      
+
       {/* Current time line */}
       <CurrentTimeLine day={day} position={currentTimePosition} />
-      
+
       {/* Time slots */}
       {timeSlots.map((time, timeIndex) => {
         const task = findTaskForSlot(day, time);
         const isContinuation = isSlotContinuation(day, time, timeIndex);
-        
+
         return (
-          <div 
-            key={`slot-${timeIndex}`} 
+          <div
+            key={`slot-${timeIndex}`}
             className={`h-6 border-r border-gray-700 ${
               time.endsWith(':00') ? 'border-b border-gray-700' : 'border-b border-gray-800'
-            } ${
-              !task && !isContinuation ? 'hover:bg-gray-800' : ''
-            }`}
-            onDragOver={(e) => {
-              if (!task && !isContinuation) {
-                allowDrop(e);
-              }
-            }}
+            } ${!task && !isContinuation ? 'hover:bg-gray-800' : ''}`}
+            onDragOver={allowDrop}
             onDrop={(e) => {
               if (!task && !isContinuation) {
                 handleDrop(e, day, time);
@@ -89,20 +86,23 @@ const DayColumn: React.FC<DayColumnProps> = ({
           >
             {task && !isContinuation && (
               <CalendarTaskCard
-                task={task}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('taskId', task.id);
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
                 duration={getTaskDuration(task)}
                 isEditing={editingTaskId === task.id}
                 editingTaskName={editingTaskName}
                 previewChange={previewChange}
                 draggingTask={draggingTask}
-                onMouseDown={(e) => handleMouseDown(e, task.id, day, time)}
                 onResizeStart={(e, edge) => {
                   const element = e.currentTarget.parentElement as HTMLDivElement;
                   handleResizeStart(e, task.id, getTaskDuration(task), edge, element);
                 }}
                 onRemoveTask={(e) => handleRemoveTask(e, task.id)}
                 onMarkComplete={(e) => handleMarkComplete(e, task.id)}
-                onEditTaskName={() => handleEditTaskName(task.id, task.name)}
+                onEditTaskName={() => handleTaskNameEdit(task.id, task.name)}
                 onTaskNameChange={handleTaskNameChange}
                 onSaveTaskName={handleSaveTaskName}
                 onTaskNameKeyDown={handleTaskNameKeyDown}
