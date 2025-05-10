@@ -57,6 +57,14 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
     return task.timeEstimate !== undefined && task.timeEstimate < 20;
   };
 
+  // Apply preview changes if this task is being resized
+  const previewStyles = previewChange && previewChange.taskId === task.id
+    ? {
+        height: `${previewChange.height}px`,
+        transform: previewChange.transform
+      }
+    : {};
+
   return (
     <Card
       id={`task-${task.id}`}
@@ -70,10 +78,7 @@ const CalendarTaskCard: React.FC<TaskCardProps> = ({
         textDecoration: task.completed ? 'line-through' : 'none',
         opacity: task.completed ? 0.6 : 1,
         color: '#ffffff',
-        ...(previewChange && previewChange.taskId === task.id ? {
-          height: `${previewChange.height}px`,
-          transform: previewChange.transform
-        } : {})
+        ...previewStyles
       }}
       onMouseDown={!task.completed ? onMouseDown : undefined}
     >

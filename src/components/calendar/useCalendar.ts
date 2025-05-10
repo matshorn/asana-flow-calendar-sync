@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Task } from '@/types';
 import { format, addDays } from 'date-fns';
@@ -115,21 +116,31 @@ export const useCalendar = () => {
     day: Date,
     startTime: string
   ) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0) return; // Only handle left-click
     const target = e.target as HTMLElement;
+    
+    // Don't start drag if clicking on action buttons or resize handles
     if (target.closest('.task-action-button') || target.closest('.resize-handle') || target.closest('input')) {
       return;
     }
+    
     e.preventDefault();
     e.stopPropagation();
+    
     const element = e.currentTarget as HTMLElement;
     const rect = element.getBoundingClientRect();
+    
+    // Calculate offset within the element where the mouse was clicked
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
+    
+    // Set drag state
     setDraggingTask(taskId);
     setDragOffset({ x: offsetX, y: offsetY });
-    setDragPosition({ left: rect.left, top: rect.top });
+    setDragPosition({ left: e.clientX, top: e.clientY });
     setOriginalTaskData({ day, startTime, rect });
+    
+    // Add global event listeners for move and up
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     document.body.classList.add('calendar-dragging');
@@ -138,12 +149,13 @@ export const useCalendar = () => {
   const handleMouseMove = (e: MouseEvent) => {
     if (!draggingTask) return;
     e.preventDefault();
-    e.stopPropagation();
-    setDragPosition({ left: e.clientX - dragOffset.x, top: e.clientY - dragOffset.y });
+    setDragPosition({ left: e.clientX, top: e.clientY });
   };
 
   const handleMouseUp = (e: MouseEvent) => {
     if (!draggingTask || !dragPosition || !originalTaskData || !calendarRef.current) return;
+    
+    // Remove global event listeners
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
     document.body.classList.remove('calendar-dragging');
@@ -155,15 +167,18 @@ export const useCalendar = () => {
     const availableWidth = calendarRect.width - timeColumnWidth;
     const columnWidth = availableWidth / days.length;
 
-    const previewLeft = dragPosition.left;
-    const previewTop = dragPosition.top;
+    // Calculate the day column where the task was dropped
+    const previewLeft = e.clientX;
+    const previewTop = e.clientY;
 
+    // Calculate which day column the task was dropped in
     const dayIndex = Math.min(
       days.length - 1,
-      Math.max(0, Math.floor((previewLeft - calendarRect.left - timeColumnWidth + dragOffset.x / 2) / columnWidth))
+      Math.max(0, Math.floor((previewLeft - calendarRect.left - timeColumnWidth) / columnWidth))
     );
     const targetDay = days[dayIndex];
 
+    // Calculate which time slot the task was dropped in
     const relativeY = previewTop - calendarRect.top - dayHeaderHeight;
     const slotIndex = Math.min(
       timeSlots.length - 1,
@@ -171,34 +186,142 @@ export const useCalendar = () => {
     );
     const targetTime = timeSlots[slotIndex];
 
+    // Schedule the task to the new day and time
     scheduleTask(draggingTask, targetDay, targetTime);
+    
+    // Reset drag state
     setDraggingTask(null);
     setDragPosition(null);
     setOriginalTaskData(null);
   };
 
-  // Resize and other handlers unchanged
-  const handleResizeStart = (e, taskId, currentDuration, edge, element) => {/* ... */};
-  const handleMarkComplete = (e, taskId) => {/* ... */};
-  const handleRemoveTask = (e, taskId) => {/* ... */};
-  const handleEditTaskName = (taskId, currentName) => {/* ... */};
-  const handleSaveTaskName = () => {/* ... */};
-  const handleTaskNameKeyDown = (e) => {/* ... */};
-  const handleTaskNameChange = (e) => {/* ... */};
+  // Resize and other handlers
+  const handleResizeStart = (
+    e: React.MouseEvent,
+    taskId: string,
+    currentDuration: number,
+    edge: 'top' | 'bottom',
+    element: HTMLDivElement
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const rect = element.getBoundingClientRect();
+    setResizing({
+      taskId,
+      startY: e.clientY,
+      startDuration: currentDuration,
+      edge,
+      originalHeight: rect.height
+    });
+    
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+    document.body.style.cursor = 'ns-resize';
+  };
+  
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!resizing) return;
+    
+    const { taskId, startY, startDuration, edge, originalHeight } = resizing;
+    const deltaY = e.clientY - startY;
+    const slotHeight = 24;
+    
+    // Calculate how many slots to add/remove
+    const deltaSlots = Math.round(deltaY / slotHeight);
+    let newDuration = startDuration;
+    
+    if (edge === 'bottom') {
+      newDuration = Math.max(1, startDuration + deltaSlots);
+    } else {
+      // For top edge, we need to adjust both the height and the transform
+      newDuration = Math.max(1, startDuration - deltaSlots);
+      
+      // Preview the transformation
+      setPreviewChange({
+        taskId,
+        height: newDuration * slotHeight,
+        transform: `translateY(${deltaSlots * slotHeight}px)`
+      });
+    }
+    
+    if (edge === 'bottom') {
+      setPreviewChange({
+        taskId,
+        height: newDuration * slotHeight,
+        transform: 'translateY(0)'
+      });
+    }
+  };
+  
+  const handleResizeEnd = (e: MouseEvent) => {
+    if (!resizing || !previewChange) return;
+    
+    document.removeEventListener('mousemove', handleResizeMove);
+    document.removeEventListener('mouseup', handleResizeEnd);
+    document.body.style.cursor = '';
+    
+    const { taskId } = resizing;
+    const task = tasks.find(t => t.id === taskId);
+    
+    if (task) {
+      // Calculate new time estimate based on the number of slots
+      const newTimeEstimate = previewChange.height / 24 * 15;
+      updateTaskTimeEstimate(taskId, newTimeEstimate);
+    }
+    
+    setResizing(null);
+    setPreviewChange(null);
+  };
+
+  const handleMarkComplete = (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation();
+    markTaskComplete(taskId);
+  };
+
+  const handleRemoveTask = (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation();
+    removeTaskFromCalendar(taskId);
+  };
+
+  const handleEditTaskName = (taskId: string, currentName: string) => {
+    setEditingTaskId(taskId);
+    setEditingTaskName(currentName);
+  };
+
+  const handleSaveTaskName = () => {
+    if (editingTaskId && editingTaskName.trim()) {
+      updateTaskName(editingTaskId, editingTaskName.trim());
+    }
+    setEditingTaskId(null);
+  };
+
+  const handleTaskNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSaveTaskName();
+    } else if (e.key === 'Escape') {
+      setEditingTaskId(null);
+    }
+  };
+
+  const handleTaskNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingTaskName(e.target.value);
+  };
 
   return {
     days,
     timeSlots,
     currentTime,
-    calculateTimeLinePosition,
     tasks,
     draggingTask,
+    dragOffset,
     dragPosition,
     originalTaskData,
     previewChange,
     editingTaskId,
     editingTaskName,
     calendarRef,
+    calculateTimeLinePosition,
     findTaskForSlot,
     getTaskDuration,
     isSlotContinuation,

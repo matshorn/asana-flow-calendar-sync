@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -105,4 +106,25 @@ select {
   background-color: #374151; /* gray-700 */
   border-color: #4b5563; /* gray-600 */
   color: #e5e7eb; /* gray-200 */
+}
+
+/* Calendar task dragging styles */
+.calendar-dragging {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+.calendar-event {
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.calendar-event:active {
+  transform: scale(1.02);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.task-card-dragging {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  z-index: 100;
 }

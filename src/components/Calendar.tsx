@@ -1,3 +1,4 @@
+
 import React from 'react';
 import TimeColumn from './calendar/TimeColumn';
 import DayColumn from './calendar/DayColumn';
@@ -23,6 +24,7 @@ const Calendar: React.FC = () => {
     isSlotContinuation,
     handleDrop,
     allowDrop,
+    handleMouseDown,
     handleResizeStart,
     handleMarkComplete,
     handleRemoveTask,
@@ -51,7 +53,6 @@ const Calendar: React.FC = () => {
               currentTimePosition={calculateTimeLinePosition()}
               tasks={tasks}
               draggingTask={draggingTask}
-              previewChange={null} // previewChange no longer used here
               editingTaskId={editingTaskId}
               editingTaskName={editingTaskName}
               findTaskForSlot={findTaskForSlot}
@@ -59,6 +60,7 @@ const Calendar: React.FC = () => {
               getTaskDuration={getTaskDuration}
               handleDrop={handleDrop}
               allowDrop={allowDrop}
+              handleMouseDown={handleMouseDown}
               handleResizeStart={handleResizeStart}
               handleRemoveTask={handleRemoveTask}
               handleMarkComplete={handleMarkComplete}

@@ -11,7 +11,6 @@ interface DayColumnProps {
   currentTimePosition: number | null;
   tasks: Task[];
   draggingTask: string | null;
-  previewChange: { taskId: string; height: number; transform: string } | null;
   editingTaskId: string | null;
   editingTaskName: string;
   findTaskForSlot: (day: Date, time: string) => Task | undefined;
@@ -41,7 +40,6 @@ const DayColumn: React.FC<DayColumnProps> = ({
   currentTimePosition,
   tasks,
   draggingTask,
-  previewChange,
   editingTaskId,
   editingTaskName,
   findTaskForSlot,
@@ -93,7 +91,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
                 duration={getTaskDuration(task)}
                 isEditing={editingTaskId === task.id}
                 editingTaskName={editingTaskName}
-                previewChange={previewChange}
+                previewChange={null}
                 draggingTask={draggingTask}
                 onMouseDown={(e) => handleMouseDown(e, task.id, day, time)}
                 onResizeStart={(e, edge) => {
