@@ -5,42 +5,42 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 10% 10%; /* Dark grey background */
+    --foreground: 220 20% 90%; /* Light grey text */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 10% 12%; /* Dark grey cards */
+    --card-foreground: 220 20% 90%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 10% 12%;
+    --popover-foreground: 220 20% 90%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 220 20% 90%; /* Light grey as primary */
+    --primary-foreground: 220 10% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 5% 15%; /* Slightly lighter grey */
+    --secondary-foreground: 220 20% 90%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 5% 20%;
+    --muted-foreground: 220 10% 70%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 5% 20%;
+    --accent-foreground: 220 20% 90%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 220 5% 20%;
+    --input: 220 5% 20%;
+    --ring: 220 5% 40%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 220 10% 8%;
+    --sidebar-foreground: 220 10% 90%;
+    --sidebar-primary: 220 5% 30%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 220 5% 15%;
+    --sidebar-accent-foreground: 220 10% 90%;
+    --sidebar-border: 220 5% 15%;
+    --sidebar-ring: 220 5% 40%;
 
     --radius: 0.5rem;
   }
@@ -50,7 +50,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-serif;
   }
 }
 
@@ -58,54 +58,54 @@
 
 .popover-content,
 .select-content {
-  background-color: #1e293b; /* Slate-800 */
-  color: #f1f5f9; /* Slate-100 */
-  border-color: #334155; /* Slate-700 */
+  background-color: #1a1a1a; /* Dark grey */
+  color: #e5e5e5; /* Light grey */
+  border-color: #333333; /* Medium grey */
 }
 
 .select-item:focus {
-  background-color: #334155; /* Slate-700 */
-  color: #f1f5f9; /* Slate-100 */
+  background-color: #333333; /* Medium grey */
+  color: #e5e5e5; /* Light grey */
 }
 
 button.bg-secondary,
 .button-secondary {
-  background-color: #1e293b; /* Slate-800 */
-  color: #f1f5f9; /* Slate-100 */
+  background-color: #1a1a1a; /* Dark grey */
+  color: #e5e5e5; /* Light grey */
 }
 
 button.bg-secondary:hover,
 .button-secondary:hover {
-  background-color: #334155; /* Slate-700 */
+  background-color: #333333; /* Medium grey */
 }
 
 .select-trigger {
-  background-color: #1e293b; /* Slate-800 */
-  color: #f1f5f9; /* Slate-100 */
-  border-color: #334155; /* Slate-700 */
+  background-color: #1a1a1a; /* Dark grey */
+  color: #e5e5e5; /* Light grey */
+  border-color: #333333; /* Medium grey */
 }
 
 .task-panel {
-  background-color: #111827; /* gray-900 */
+  background-color: #0f0f0f; /* Darker grey */
 }
 
 .task-card {
-  background-color: #1f2937; /* gray-800 */
-  color: #e5e7eb; /* gray-200 */
-  border-color: #374151; /* gray-700 */
+  background-color: #1a1a1a; /* Dark grey */
+  color: #e5e5e5; /* Light grey */
+  border-color: #333333; /* Medium grey */
 }
 
 .dialog-content {
-  background-color: #1f2937; /* gray-800 */
-  border-color: #374151; /* gray-700 */
+  background-color: #1a1a1a; /* Dark grey */
+  border-color: #333333; /* Medium grey */
 }
 
 input,
 textarea,
 select {
-  background-color: #374151; /* gray-700 */
-  border-color: #4b5563; /* gray-600 */
-  color: #e5e7eb; /* gray-200 */
+  background-color: #292929; /* Medium grey */
+  border-color: #404040; /* Medium-light grey */
+  color: #e5e5e5; /* Light grey */
 }
 
 /* Calendar task dragging styles */
@@ -127,4 +127,33 @@ select {
 .task-card-dragging {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
   z-index: 100;
+}
+
+/* Additional styles inspired by reference images */
+.heading-xl {
+  font-family: 'serif';
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.heading-lg {
+  font-family: 'serif';
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.subtle-grid-bg {
+  background-image: linear-gradient(rgba(200, 200, 200, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(200, 200, 200, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.card-with-shadow {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background-color: #1a1a1a;
+  border: 1px solid #333;
 }

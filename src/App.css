@@ -8,6 +8,10 @@
 body {
   background-color: #1a1a1a;
   color: #e0e0e0;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  background-image: linear-gradient(rgba(200, 200, 200, 0.025) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(200, 200, 200, 0.025) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 .logo {
@@ -44,4 +48,30 @@ body {
 
 .read-the-docs {
   color: #888;
+}
+
+/* Styles inspired by the reference images */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: normal;
+  letter-spacing: -0.01em;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: normal;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #a0a0a0;
+  font-size: 1.1rem;
+}
+
+.calendar-header {
+  font-weight: normal;
+  letter-spacing: -0.01em;
+}
+
+.time-text {
+  font-variant-numeric: tabular-nums;
 }

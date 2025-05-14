@@ -14,6 +14,7 @@ const CalendarStyles: React.FC = () => {
       .calendar-event {
         position: relative;
         z-index: 1;
+        font-family: Georgia, 'Times New Roman', Times, serif;
       }
       .calendar-event.dragging {
         z-index: 100;
@@ -27,6 +28,7 @@ const CalendarStyles: React.FC = () => {
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5) !important;
         transform: rotate(2deg) !important;
         background-color: rgba(30, 30, 30, 0.7) !important;
+        font-family: Georgia, 'Times New Roman', Times, serif;
       }
       
       /* Prevent task buttons from triggering the drag */
@@ -35,6 +37,13 @@ const CalendarStyles: React.FC = () => {
       }
       .resize-handle {
         pointer-events: auto !important;
+      }
+      
+      /* Subtle grid background for time slots */
+      .time-slot {
+        background-image: linear-gradient(rgba(200, 200, 200, 0.015) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(200, 200, 200, 0.015) 1px, transparent 1px);
+        background-size: 10px 10px;
       }
     `;
     document.head.appendChild(style);

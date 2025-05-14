@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -19,6 +20,10 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+        sans: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'], // Override default sans to use serif
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -27,7 +32,7 @@ const config: Config = {
         foreground: 'hsl(var(--foreground))',
         asana: {
           purple: '#796eff',
-          dark: '#2e3648',
+          dark: '#222222', // Changed to dark grey
           light: '#f6f8f9',
           green: '#25e8c8',
           orange: '#fd7e42',
@@ -70,6 +75,21 @@ const config: Config = {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        grey: {
+          100: '#f0f0f0',
+          200: '#e0e0e0',
+          300: '#d0d0d0',
+          400: '#b0b0b0',
+          500: '#909090',
+          600: '#707070',
+          700: '#505050',
+          800: '#333333',
+          900: '#1a1a1a',
+          950: '#0f0f0f',
+        }
+      },
+      backgroundImage: {
+        'subtle-grid': 'linear-gradient(rgba(200, 200, 200, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(200, 200, 200, 0.05) 1px, transparent 1px)',
       },
       borderRadius: {
         lg: 'var(--radius)',
