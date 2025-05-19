@@ -2,8 +2,23 @@
 import React, { useEffect, useState } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw, ExternalLink } from 'lucide-react';
+import { RefreshCcw, ExternalLink, ChevronDown } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { AsanaWorkspace } from '@/services/asana/asanaApi';
 
 // Define Asana OAuth configuration
 const ASANA_CLIENT_ID = '1210120911116555'; // Client ID for Asana app
@@ -15,6 +30,9 @@ const ASANA_SCOPE = 'default'; // Default scope gives read-only access to tasks/
 const AsanaTokenForm: React.FC = () => {
   const { syncWithAsana, loading, asanaToken, setAsanaToken } = useTaskContext();
   const [authenticating, setAuthenticating] = useState<boolean>(false);
+  const [workspaces, setWorkspaces] = useState<AsanaWorkspace[]>([]);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
+  const [showWorkspaceSelect, setShowWorkspaceSelect] = useState<boolean>(false);
 
   // Function to initiate OAuth flow
   const handleConnectAsana = () => {
@@ -26,6 +44,64 @@ const AsanaTokenForm: React.FC = () => {
     
     // Redirect the user to Asana's authorization page
     window.location.href = authUrl;
+  };
+
+  // Function to fetch workspaces after authentication
+  const fetchWorkspaces = async (token: string) => {
+    try {
+      const response = await fetch('https://app.asana.com/api/1.0/workspaces', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch workspaces: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setWorkspaces(data.data);
+      setShowWorkspaceSelect(true);
+      
+      // Pre-select the fourth workspace if available (index 3)
+      if (data.data.length >= 4) {
+        setSelectedWorkspaceId(data.data[3].gid);
+      } else if (data.data.length > 0) {
+        setSelectedWorkspaceId(data.data[0].gid);
+      }
+      
+    } catch (error) {
+      console.error("Error fetching workspaces:", error);
+      toast({
+        title: "Error Fetching Workspaces",
+        description: "Unable to retrieve your Asana workspaces. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthenticating(false);
+    }
+  };
+
+  // Handle workspace selection
+  const handleWorkspaceSelect = (workspaceId: string) => {
+    setSelectedWorkspaceId(workspaceId);
+  };
+
+  // Start sync with selected workspace
+  const handleStartSync = () => {
+    if (selectedWorkspaceId) {
+      // Store the selected workspace ID in localStorage
+      localStorage.setItem('asana_selected_workspace', selectedWorkspaceId);
+      setShowWorkspaceSelect(false);
+      syncWithAsana();
+    } else {
+      toast({
+        title: "No Workspace Selected",
+        description: "Please select a workspace to continue.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Check for OAuth callback on component mount
@@ -64,18 +140,51 @@ const AsanaTokenForm: React.FC = () => {
         setAsanaToken(demoToken);
         toast({
           title: "Connected to Asana",
-          description: "Successfully authenticated with Asana. Starting data sync...",
+          description: "Please select a workspace to sync with.",
         });
         
-        // After token is set, trigger the sync process
-        syncWithAsana();
-        setAuthenticating(false);
+        // Fetch workspaces after token is obtained
+        fetchWorkspaces(demoToken);
       }, 1500);
+    }
+    
+    // Check if we have a previously selected workspace
+    const savedWorkspaceId = localStorage.getItem('asana_selected_workspace');
+    if (savedWorkspaceId) {
+      setSelectedWorkspaceId(savedWorkspaceId);
     }
   }, [syncWithAsana, setAsanaToken]);
 
   // Show button variant based on connection state
   const isConnected = !!asanaToken;
+
+  if (showWorkspaceSelect) {
+    return (
+      <div className="flex items-center gap-2">
+        <Select value={selectedWorkspaceId || ''} onValueChange={handleWorkspaceSelect}>
+          <SelectTrigger className="w-[180px] bg-gray-800 border-gray-700">
+            <SelectValue placeholder="Select workspace" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-800 border-gray-700 text-gray-200">
+            {workspaces.map((workspace, index) => (
+              <SelectItem key={workspace.gid} value={workspace.gid} className="text-gray-200 focus:bg-gray-700 focus:text-white">
+                {workspace.name} {index === 3 ? '(recommended)' : ''}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={handleStartSync}
+          disabled={!selectedWorkspaceId}
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200"
+        >
+          Start Sync
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Button 
