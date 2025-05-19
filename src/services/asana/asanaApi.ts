@@ -21,8 +21,49 @@ export interface AsanaTask {
   notes: string;
 }
 
-// Hardcoded Asana token - this is a publishable key used for API access
-const ASANA_TOKEN = "2/708730772520/1210120911116555:51c156887a0bebcf8c101daac7f13496";
+// Get token from localStorage or use hardcoded demo token
+const getAsanaToken = (): string => {
+  const tokenFromStorage = localStorage.getItem('asanaToken');
+  return tokenFromStorage || "2/708730772520/1210120911116555:51c156887a0bebcf8c101daac7f13496";
+};
+
+/**
+ * Helper function to make API requests to Asana
+ */
+const asanaApiRequest = async (endpoint: string): Promise<any> => {
+  try {
+    console.log(`Making API request to: ${endpoint}`);
+    const token = getAsanaToken();
+    
+    const response = await fetch(`https://app.asana.com/api/1.0${endpoint}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      // Try to get error details from response
+      let errorDetails = '';
+      try {
+        const errorData = await response.json();
+        errorDetails = JSON.stringify(errorData);
+      } catch (e) {
+        errorDetails = `Status: ${response.status}`;
+      }
+      
+      console.error(`API request failed: ${endpoint}`, errorDetails);
+      throw new Error(`Request failed: ${errorDetails}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`Error in API request to ${endpoint}:`, error);
+    throw error;
+  }
+};
 
 /**
  * Fetches workspaces from Asana API
@@ -30,24 +71,16 @@ const ASANA_TOKEN = "2/708730772520/1210120911116555:51c156887a0bebcf8c101daac7f
 export const fetchWorkspaces = async (): Promise<AsanaWorkspace[]> => {
   console.log("Fetching available workspaces...");
   try {
-    const response = await fetch('https://app.asana.com/api/1.0/workspaces', {
-      headers: {
-        'Authorization': `Bearer ${ASANA_TOKEN}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Workspaces fetch error:", errorData);
-      throw new Error(`Failed to fetch workspaces: ${response.status}`);
-    }
-    
-    const data = await response.json();
+    const data = await asanaApiRequest('/workspaces');
     console.log("Available workspaces:", data);
     return data.data;
   } catch (error) {
     console.error("Error fetching workspaces:", error);
+    toast({
+      title: "Connection Error",
+      description: "Failed to fetch workspaces. Please check your connection and try again.",
+      variant: "destructive",
+    });
     throw error;
   }
 };
@@ -58,24 +91,16 @@ export const fetchWorkspaces = async (): Promise<AsanaWorkspace[]> => {
 export const fetchProjects = async (workspaceId: string): Promise<AsanaProject[]> => {
   console.log(`Fetching projects for workspace: ${workspaceId}`);
   try {
-    const response = await fetch(`https://app.asana.com/api/1.0/workspaces/${workspaceId}/projects`, {
-      headers: {
-        'Authorization': `Bearer ${ASANA_TOKEN}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Projects fetch error:", errorData);
-      throw new Error(`Failed to fetch projects: ${response.status}`);
-    }
-    
-    const data = await response.json();
+    const data = await asanaApiRequest(`/workspaces/${workspaceId}/projects`);
     console.log("Projects data:", data);
     return data.data;
   } catch (error) {
     console.error("Error fetching projects:", error);
+    toast({
+      title: "Error",
+      description: "Failed to fetch projects from Asana.",
+      variant: "destructive",
+    });
     throw error;
   }
 };
@@ -86,23 +111,12 @@ export const fetchProjects = async (workspaceId: string): Promise<AsanaProject[]
 export const fetchTasksForProject = async (projectId: string): Promise<AsanaTask[]> => {
   console.log("Fetching tasks for project:", projectId);
   try {
-    const response = await fetch(`https://app.asana.com/api/1.0/projects/${projectId}/tasks`, {
-      headers: {
-        'Authorization': `Bearer ${ASANA_TOKEN}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      console.error(`Failed to fetch tasks for project ${projectId}: ${response.status}`);
-      return [];
-    }
-    
-    const data = await response.json();
+    const data = await asanaApiRequest(`/projects/${projectId}/tasks`);
     console.log(`Tasks data for project ${projectId}:`, data);
     return data.data;
   } catch (error) {
     console.error(`Error fetching tasks for project ${projectId}:`, error);
+    // Don't throw error here to allow partial data loading
     return [];
   }
 };
@@ -113,19 +127,7 @@ export const fetchTasksForProject = async (projectId: string): Promise<AsanaTask
 export const fetchTaskDetails = async (taskId: string): Promise<AsanaTask | null> => {
   console.log("Fetching details for task:", taskId);
   try {
-    const response = await fetch(`https://app.asana.com/api/1.0/tasks/${taskId}`, {
-      headers: {
-        'Authorization': `Bearer ${ASANA_TOKEN}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      console.error(`Error fetching details for task ${taskId}: Status ${response.status}`);
-      return null;
-    }
-    
-    const data = await response.json();
+    const data = await asanaApiRequest(`/tasks/${taskId}`);
     return data.data;
   } catch (error) {
     console.error(`Error fetching details for task ${taskId}:`, error);
@@ -135,7 +137,7 @@ export const fetchTaskDetails = async (taskId: string): Promise<AsanaTask | null
 
 /**
  * Selects a workspace from the available workspaces
- * Returns the fourth workspace if available, otherwise the first
+ * Uses the workspace stored in localStorage, or falls back to default logic
  */
 export const selectWorkspace = (workspaces: AsanaWorkspace[]): AsanaWorkspace | null => {
   if (workspaces.length === 0) {
@@ -147,7 +149,19 @@ export const selectWorkspace = (workspaces: AsanaWorkspace[]): AsanaWorkspace | 
     return null;
   }
   
-  // Use the fourth workspace if available, otherwise use the first
+  // Check for stored workspace preference
+  const storedWorkspaceId = localStorage.getItem('asana_selected_workspace');
+  
+  if (storedWorkspaceId) {
+    // Find the stored workspace in the available workspaces
+    const storedWorkspace = workspaces.find(workspace => workspace.gid === storedWorkspaceId);
+    if (storedWorkspace) {
+      console.log(`Using previously selected workspace: ${storedWorkspace.name} (${storedWorkspace.gid})`);
+      return storedWorkspace;
+    }
+  }
+  
+  // Fall back to default logic: use the fourth workspace if available, otherwise the first
   const selectedWorkspaceIndex = workspaces.length >= 4 ? 3 : 0; // Index 3 is the fourth workspace
   const selectedWorkspace = workspaces[selectedWorkspaceIndex];
   console.log(`Using workspace: ${selectedWorkspace.name} (${selectedWorkspace.gid}) - Workspace index: ${selectedWorkspaceIndex}`);

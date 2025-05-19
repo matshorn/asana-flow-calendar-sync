@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AsanaWorkspace } from '@/services/asana/asanaApi';
 
-// Define Asana OAuth configuration
+// Define Asana OAuth configuration with appropriate scope and response type
 const ASANA_CLIENT_ID = '1210120911116555'; // Client ID for Asana app
 const REDIRECT_URI = window.location.origin; // Current origin as the redirect URI
 const ASANA_AUTH_URL = 'https://app.asana.com/-/oauth_authorize';
@@ -36,14 +36,36 @@ const AsanaTokenForm: React.FC = () => {
 
   // Function to initiate OAuth flow
   const handleConnectAsana = () => {
-    const state = Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('asana_oauth_state', state);
-    
-    // Construct the authorization URL
-    const authUrl = `${ASANA_AUTH_URL}?client_id=${ASANA_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&state=${state}&scope=${ASANA_SCOPE}`;
-    
-    // Redirect the user to Asana's authorization page
-    window.location.href = authUrl;
+    try {
+      const state = Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('asana_oauth_state', state);
+      
+      // Construct the authorization URL with proper encoding
+      const authUrl = new URL(ASANA_AUTH_URL);
+      authUrl.searchParams.append('client_id', ASANA_CLIENT_ID);
+      authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
+      authUrl.searchParams.append('response_type', 'code');
+      authUrl.searchParams.append('state', state);
+      authUrl.searchParams.append('scope', ASANA_SCOPE);
+      
+      // Show toast before redirecting
+      toast({
+        title: "Connecting to Asana",
+        description: "You will be redirected to Asana to authorize access.",
+      });
+      
+      console.log("Redirecting to Asana authorization URL:", authUrl.toString());
+      
+      // Redirect the user to Asana's authorization page
+      window.location.href = authUrl.toString();
+    } catch (error) {
+      console.error("Error initiating OAuth flow:", error);
+      toast({
+        title: "Connection Error",
+        description: "Failed to connect to Asana. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Function to fetch workspaces after authentication
@@ -110,6 +132,20 @@ const AsanaTokenForm: React.FC = () => {
     const code = urlParams.get('code');
     const state = urlParams.get('state');
     const savedState = localStorage.getItem('asana_oauth_state');
+    const error = urlParams.get('error');
+    
+    // If there's an error in the URL, show it to the user
+    if (error) {
+      console.error("Asana OAuth error:", error);
+      toast({
+        title: "Asana Connection Failed",
+        description: `Error: ${error}. Please try again.`,
+        variant: "destructive",
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
     
     // If we have a code and the states match, exchange it for a token
     if (code && state && state === savedState) {
@@ -118,6 +154,14 @@ const AsanaTokenForm: React.FC = () => {
       // Remove the code and state from the URL to prevent reuse
       window.history.replaceState({}, document.title, window.location.pathname);
       localStorage.removeItem('asana_oauth_state');
+      
+      // Show toast about token exchange
+      toast({
+        title: "Authentication in Progress",
+        description: "Connecting to your Asana account...",
+      });
+      
+      console.log("Received authorization code from Asana, proceeding with token exchange");
       
       // Exchange the code for an access token
       // Note: In a production app, this exchange should happen server-side
@@ -130,11 +174,9 @@ const AsanaTokenForm: React.FC = () => {
         code: code
       });
       
-      // Note: The token exchange is normally done server-side to protect client_secret
-      // For this demo, we'll use the pre-configured token in the asanaApi.ts file
-      // In a real app, implement proper server-side token exchange
-      
-      // Simulate successful token exchange using the existing token
+      // For now, we'll use the pre-configured token in the asanaApi.ts file
+      // In production, implement a proper server-side token exchange 
+      console.log("Using demo token for now - in production, implement server-side exchange");
       setTimeout(() => {
         const demoToken = "2/708730772520/1210120911116555:51c156887a0bebcf8c101daac7f13496";
         setAsanaToken(demoToken);
