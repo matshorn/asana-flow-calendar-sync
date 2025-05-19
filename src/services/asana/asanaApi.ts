@@ -35,6 +35,13 @@ const asanaApiRequest = async (endpoint: string): Promise<any> => {
     console.log(`Making API request to: ${endpoint}`);
     const token = getAsanaToken();
     
+    if (!token) {
+      console.error("No Asana token available");
+      throw new Error("Authentication required");
+    }
+    
+    console.log(`Using token: ${token.substring(0, 10)}...`);
+    
     const response = await fetch(`https://app.asana.com/api/1.0${endpoint}`, {
       method: 'GET',
       headers: {
@@ -62,6 +69,26 @@ const asanaApiRequest = async (endpoint: string): Promise<any> => {
   } catch (error) {
     console.error(`Error in API request to ${endpoint}:`, error);
     throw error;
+  }
+};
+
+/**
+ * Tests the Asana token to verify it's valid
+ */
+export const testAsanaConnection = async (): Promise<boolean> => {
+  try {
+    console.log("Testing Asana connection...");
+    await asanaApiRequest('/users/me');
+    console.log("Asana connection test successful");
+    return true;
+  } catch (error) {
+    console.error("Asana connection test failed:", error);
+    toast({
+      title: "Connection Error",
+      description: "Failed to connect to Asana. Your token might be invalid or expired.",
+      variant: "destructive",
+    });
+    return false;
   }
 };
 

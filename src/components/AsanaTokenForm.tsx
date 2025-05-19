@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
@@ -11,21 +10,12 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { AsanaWorkspace } from '@/services/asana/asanaApi';
+import { testAsanaConnection, AsanaWorkspace } from '@/services/asana/asanaApi';
 
 // Define Asana OAuth configuration with appropriate scope and response type
 const ASANA_CLIENT_ID = '1210120911116555'; // Client ID for Asana app
 const REDIRECT_URI = window.location.origin; // Current origin as the redirect URI
 const ASANA_AUTH_URL = 'https://app.asana.com/-/oauth_authorize';
-const ASANA_TOKEN_URL = 'https://app.asana.com/-/oauth_token';
-const ASANA_SCOPE = 'default'; // Default scope gives read-only access to tasks/projects
 
 const AsanaTokenForm: React.FC = () => {
   const { syncWithAsana, loading, asanaToken, setAsanaToken } = useTaskContext();
@@ -33,33 +23,45 @@ const AsanaTokenForm: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<AsanaWorkspace[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
   const [showWorkspaceSelect, setShowWorkspaceSelect] = useState<boolean>(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // Function to initiate OAuth flow
   const handleConnectAsana = () => {
     try {
+      setConnectionError(null);
       const state = Math.random().toString(36).substring(2, 15);
       localStorage.setItem('asana_oauth_state', state);
       
       // Construct the authorization URL with proper encoding
       const authUrl = new URL(ASANA_AUTH_URL);
       authUrl.searchParams.append('client_id', ASANA_CLIENT_ID);
-      authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
+      authUrl.searchParams.append('redirect_uri', encodeURIComponent(REDIRECT_URI));
       authUrl.searchParams.append('response_type', 'code');
       authUrl.searchParams.append('state', state);
-      authUrl.searchParams.append('scope', ASANA_SCOPE);
       
-      // Show toast before redirecting
+      console.log("Redirecting to Asana authorization URL:", authUrl.toString());
+      
       toast({
         title: "Connecting to Asana",
         description: "You will be redirected to Asana to authorize access.",
       });
       
-      console.log("Redirecting to Asana authorization URL:", authUrl.toString());
+      // Open Asana authorization in a new window
+      const authWindow = window.open(authUrl.toString(), 'asana_auth', 'width=800,height=600');
       
-      // Redirect the user to Asana's authorization page
-      window.location.href = authUrl.toString();
+      if (!authWindow) {
+        console.error("Popup blocked. Please allow popups for this site.");
+        setConnectionError("Popup blocked. Please allow popups for this site.");
+        toast({
+          title: "Connection Error",
+          description: "Popup blocked. Please allow popups for this site.",
+          variant: "destructive",
+        });
+      }
+      
     } catch (error) {
       console.error("Error initiating OAuth flow:", error);
+      setConnectionError(error instanceof Error ? error.message : "Unknown error");
       toast({
         title: "Connection Error",
         description: "Failed to connect to Asana. Please try again.",
@@ -71,6 +73,18 @@ const AsanaTokenForm: React.FC = () => {
   // Function to fetch workspaces after authentication
   const fetchWorkspaces = async (token: string) => {
     try {
+      // Test connection first
+      const isConnected = await testAsanaConnection();
+      if (!isConnected) {
+        setAuthenticating(false);
+        return;
+      }
+      
+      toast({
+        title: "Connected to Asana",
+        description: "Please select a workspace to sync with.",
+      });
+      
       const response = await fetch('https://app.asana.com/api/1.0/workspaces', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -95,6 +109,7 @@ const AsanaTokenForm: React.FC = () => {
       
     } catch (error) {
       console.error("Error fetching workspaces:", error);
+      setConnectionError(error instanceof Error ? error.message : "Unknown error");
       toast({
         title: "Error Fetching Workspaces",
         description: "Unable to retrieve your Asana workspaces. Please try again.",
@@ -128,15 +143,22 @@ const AsanaTokenForm: React.FC = () => {
 
   // Check for OAuth callback on component mount
   useEffect(() => {
+    console.log("AsanaTokenForm mounted, checking for OAuth callback");
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const state = urlParams.get('state');
     const savedState = localStorage.getItem('asana_oauth_state');
     const error = urlParams.get('error');
     
+    console.log("URL params:", { code: code?.substring(0, 5) + "...", state, error });
+    
+    // Clear any previous connection errors
+    setConnectionError(null);
+    
     // If there's an error in the URL, show it to the user
     if (error) {
       console.error("Asana OAuth error:", error);
+      setConnectionError(`OAuth Error: ${error}`);
       toast({
         title: "Asana Connection Failed",
         description: `Error: ${error}. Please try again.`,
@@ -155,47 +177,63 @@ const AsanaTokenForm: React.FC = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
       localStorage.removeItem('asana_oauth_state');
       
-      // Show toast about token exchange
+      console.log("Received authorization code from Asana, proceeding with token exchange");
+      
       toast({
         title: "Authentication in Progress",
         description: "Connecting to your Asana account...",
       });
       
-      console.log("Received authorization code from Asana, proceeding with token exchange");
-      
-      // Exchange the code for an access token
-      // Note: In a production app, this exchange should happen server-side
-      // This is a simplified example for demonstration purposes
-      const tokenData = new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: ASANA_CLIENT_ID,
-        client_secret: '', // In a real app, this would be stored securely server-side
-        redirect_uri: REDIRECT_URI,
-        code: code
-      });
-      
-      // For now, we'll use the pre-configured token in the asanaApi.ts file
-      // In production, implement a proper server-side token exchange 
-      console.log("Using demo token for now - in production, implement server-side exchange");
+      // For demo purposes, use the hardcoded token
+      // In production, implement proper server-side token exchange
       setTimeout(() => {
+        console.log("Using demo token for authentication");
         const demoToken = "2/708730772520/1210120911116555:51c156887a0bebcf8c101daac7f13496";
         setAsanaToken(demoToken);
-        toast({
-          title: "Connected to Asana",
-          description: "Please select a workspace to sync with.",
-        });
         
         // Fetch workspaces after token is obtained
         fetchWorkspaces(demoToken);
       }, 1500);
+    } else {
+      // Check if we already have a token
+      if (asanaToken) {
+        console.log("Already have an Asana token, checking if it's valid");
+        // Test if the token is valid
+        testAsanaConnection().then(isValid => {
+          if (isValid && !showWorkspaceSelect) {
+            // Check if we have a previously selected workspace
+            const savedWorkspaceId = localStorage.getItem('asana_selected_workspace');
+            if (savedWorkspaceId) {
+              console.log("Using previously selected workspace:", savedWorkspaceId);
+              setSelectedWorkspaceId(savedWorkspaceId);
+            } else {
+              // If no workspace is selected, show the workspace selector
+              console.log("No workspace selected, fetching workspaces");
+              fetchWorkspaces(asanaToken);
+            }
+          }
+        });
+      }
     }
-    
-    // Check if we have a previously selected workspace
-    const savedWorkspaceId = localStorage.getItem('asana_selected_workspace');
-    if (savedWorkspaceId) {
-      setSelectedWorkspaceId(savedWorkspaceId);
-    }
-  }, [syncWithAsana, setAsanaToken]);
+  }, [asanaToken, setAsanaToken, showWorkspaceSelect]);
+
+  // Show connection error if there is one
+  if (connectionError) {
+    return (
+      <div className="flex flex-col items-center gap-3">
+        <div className="text-destructive text-sm">{connectionError}</div>
+        <Button 
+          variant="default"
+          size="sm" 
+          onClick={handleConnectAsana}
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200"
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   // Show button variant based on connection state
   const isConnected = !!asanaToken;
